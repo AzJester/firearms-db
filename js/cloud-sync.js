@@ -277,9 +277,15 @@ const CloudSync = {
       this.setStatus('Synced', 'ok');
     } catch (e) {
       console.error('Cloud save failed', e);
-      this.setStatus('Save failed — retrying', 'error');
-      this.pendingPush = true;
-      setTimeout(() => this.schedulePush(), 8000);
+      // Changes are already saved on this device (IndexedDB); they upload later.
+      if (navigator.onLine === false) {
+        this.setStatus('Offline — changes saved on this device', 'error');
+        // a retry is triggered by the 'online' event listener below
+      } else {
+        this.setStatus('Save failed — will retry', 'error');
+        clearTimeout(this._retryTimer);
+        this._retryTimer = setTimeout(() => this.push(), 8000);
+      }
     } finally {
       this.pushing = false;
       if (this.pendingPush) { this.pendingPush = false; this.schedulePush(); }
@@ -346,6 +352,7 @@ const CloudSync = {
     this.ready = true;
     if (typeof updateStats === 'function') updateStats();
     if (typeof render === 'function') render();
+    if (window.buildThumbnails) buildThumbnails();
     await this.cacheLocal();
     // Upload to the cloud in the background so the UI is not blocked while
     // large photos/PDFs transfer. Progress shows in the sync pill.
@@ -359,3 +366,11 @@ const CloudSync = {
 };
 
 window.CloudSync = CloudSync;
+
+// Flush pending changes as soon as the connection returns; reflect offline state.
+window.addEventListener('online', () => {
+  if (CloudSync.ready) { CloudSync.setStatus('Back online — syncing…', 'syncing'); CloudSync.push(); }
+});
+window.addEventListener('offline', () => {
+  if (CloudSync.ready) CloudSync.setStatus('Offline — changes saved on this device', 'error');
+});

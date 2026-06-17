@@ -21,6 +21,7 @@ let editingAmmoId = null;
 let currentTab = 'all';
 let currentView = 'cards';
 let tempImages = [];
+let thumbCache = {};   // imageId -> small downscaled data URL for fast card/table rendering
 let tempDocs = [];
 let tempTags = [];
 let tempStampPdf = null;
@@ -1123,9 +1124,29 @@ function renderAmmoTab() {
   document.getElementById('tableContainer').innerHTML = h;
 }
 
+// Generate small thumbnails for card/table images once, then refresh the view.
+let _buildingThumbs = false;
+async function buildThumbnails() {
+  if (_buildingThumbs || typeof compressImage !== 'function') return;
+  _buildingThumbs = true;
+  try {
+    const ids = new Set();
+    (db.firearms || []).forEach(f => (f.images || []).forEach(i => { if (i) ids.add(i); }));
+    let made = false;
+    for (const id of ids) {
+      if (thumbCache[id] || !imagesDb[id]) continue;
+      try { thumbCache[id] = await compressImage(imagesDb[id], 420, 0.62); made = true; }
+      catch (e) { /* keep full image as fallback */ }
+    }
+    if (made && typeof render === 'function') render();
+  } finally { _buildingThumbs = false; }
+}
+window.buildThumbnails = buildThumbnails;
+
 function renderCards(items) {
   document.getElementById('cardGrid').innerHTML = items.map(f => {
-    const img = f.images && f.images.length > 0 && imagesDb[f.images[0]] ? `<img class="card-img" loading="lazy" src="${imagesDb[f.images[0]]}" alt="${esc(f.make)} ${esc(f.model)}">` : `<div class="card-img-placeholder">&#10022;</div>`;
+    const img0 = f.images && f.images.length > 0 ? (thumbCache[f.images[0]] || imagesDb[f.images[0]]) : null;
+    const img = img0 ? `<img class="card-img" loading="lazy" src="${img0}" alt="${esc(f.make)} ${esc(f.model)}">` : `<div class="card-img-placeholder">&#10022;</div>`;
     const nfa = f.isNFA ? `<div class="nfa-badge">${esc(f.nfaType||'NFA')}</div>` : '';
     let stamp = '';
     if (f.isNFA && f.stampStatus) {
@@ -1156,7 +1177,8 @@ function renderTable(items) {
   h += '</tr></thead><tbody>';
 
   items.forEach(f => {
-    const im = f.images && f.images.length > 0 && imagesDb[f.images[0]]?`<img class="thumb" loading="lazy" src="${imagesDb[f.images[0]]}">` : `<span class="thumb-placeholder">&#10022;</span>`;
+    const tsrc = f.images && f.images.length > 0 ? (thumbCache[f.images[0]] || imagesDb[f.images[0]]) : null;
+    const im = tsrc?`<img class="thumb" loading="lazy" src="${tsrc}">` : `<span class="thumb-placeholder">&#10022;</span>`;
     const pr = f.price?'$'+parseFloat(f.price).toLocaleString():'--';
     let nfa='';
     if(f.isNFA){nfa=`<span class="nfa-tag">${esc(f.nfaType||'NFA')}</span>`;if(f.stampStatus){const c=f.stampStatus==='Approved'?'approved':f.stampStatus==='Pending'?'pending':'submitted';nfa+=` <span class="stamp-tag ${c}">${esc(f.stampStatus)}</span>`;}}
@@ -3097,6 +3119,7 @@ async function bootApp(){
   recordValueSnapshot();
   updateStats();
   render();
+  buildThumbnails(); // background: speed up card/table rendering
   hasUnsavedChanges = false; // reset after initial load
 }
 window.bootApp = bootApp;
