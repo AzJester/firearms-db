@@ -1583,3 +1583,31 @@ table.data-table th { letter-spacing: 0.3px; }
 .dh-label { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); font-weight: 600; }
 .dh-title { font-weight: 700; font-size: 0.92rem; color: var(--text); }
 .dh-sub { font-size: 0.82rem; color: var(--accent); font-weight: 600; }
+
+/* ===== DASHBOARD FIT / RESPONSIVENESS (v3.7) ===== */
+/* Fill width, and never force a track wider than the viewport (small screens) */
+.dashboard { grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+/* Critical: let cards shrink inside their grid track so charts/long text can't overflow */
+.dash-card { min-width: 0; }
+.dash-card canvas { max-width: 100%; }
+.dash-chart-wrap, .dash-chart-sm { min-width: 0; width: 100%; }
+/* List rows: long labels wrap, the value stays put */
+.dash-list-item { gap: 10px; }
+.dash-list-item .label { min-width: 0; overflow-wrap: anywhere; }
+.dash-list-item .value { flex-shrink: 0; white-space: nowrap; text-align: right; }
+/* Bar fallback labels truncate instead of overflowing */
+.dash-bar-row { min-width: 0; }
+.dash-bar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* KPI cells shrink gracefully; big values wrap rather than overflow */
+.dash-kpi { min-width: 0; }
+.dash-kpi-text { min-width: 0; }
+.dash-kpi-value { overflow-wrap: anywhere; }
+/* Highlights + alerts text behaves */
+.dh-text { min-width: 0; }
+.dh-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-alert { min-width: 0; }
+.dash-alert span:last-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .dashboard { padding: 16px; gap: 12px; }
+  .dash-card { padding: 16px; }
+}
