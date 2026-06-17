@@ -13,7 +13,7 @@ const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
 const exists = (p) => fs.existsSync(path.join(root, p));
 
 // Element IDs that are created dynamically at runtime (not static in HTML).
-const DYNAMIC_IDS = new Set(['welcomeOverlay', 'valueChartCanvas']);
+const DYNAMIC_IDS = new Set(['welcomeOverlay', 'valueChartCanvas', 'typeChartCanvas', 'calChartCanvas', 'mfgChartCanvas']);
 
 function divBalance(html, name) {
   const open = (html.match(/<div\b/gi) || []).length;
