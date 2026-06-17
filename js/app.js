@@ -679,6 +679,110 @@ function reminderGo(type, id) {
   else if (type === 'ammo') { const t = document.querySelector('.tab[data-tab="ammo"]'); if (t) t.click(); }
 }
 
+// =====================================================
+// SHARE LINKS (read-only inventory for e.g. insurance)
+// =====================================================
+function shareUrl(token) { return new URL('share.html?t=' + token, location.href).href; }
+
+function openShareModal() {
+  const r = document.getElementById('shareResult'); if (r) r.style.display = 'none';
+  document.getElementById('shareModal').classList.add('open');
+  renderSharesList();
+}
+function closeShareModal() { document.getElementById('shareModal').classList.remove('open'); }
+
+async function buildShareSnapshot(opts) {
+  const active = db.firearms.filter(f => !f.status || f.status === 'Active');
+  const fVal = active.reduce((s, f) => s + (parseFloat(f.price) || 0), 0);
+  const accVal = db.accessories.reduce((s, a) => s + (parseFloat(a.price) || 0), 0);
+  const rounds = db.ammo.reduce((s, a) => s + (parseInt(a.quantity) || 0), 0);
+  const firearms = [];
+  for (const f of active) {
+    let photo = null;
+    if (opts.photos && f.images && f.images[0] && imagesDb[f.images[0]]) {
+      try { photo = await compressImage(imagesDb[f.images[0]], 700, 0.6); }
+      catch (e) { photo = imagesDb[f.images[0]]; }
+    }
+    firearms.push({
+      make: f.make || '', model: f.model || '', serial: opts.serials ? (f.serial || '') : '',
+      type: f.type || '', caliber: f.caliber || '', barrel: f.barrel || '', condition: f.condition || '',
+      price: parseFloat(f.price) || 0, dateAcquired: f.dateAcquired || '',
+      isNFA: !!f.isNFA, nfaType: f.nfaType || '', photo
+    });
+  }
+  const accessories = db.accessories.map(a => ({ name: a.name || '', category: a.category || '', brand: a.brand || '', model: a.model || '', price: parseFloat(a.price) || 0 }));
+  return {
+    generatedAt: new Date().toISOString(), label: opts.label || '',
+    totals: { firearms: active.length, value: fVal + accVal, accessories: db.accessories.length, rounds },
+    includeSerials: opts.serials, firearms, accessories
+  };
+}
+
+async function createShare() {
+  const btn = document.getElementById('createShareBtn');
+  btn.disabled = true; btn.textContent = 'Creating…';
+  try {
+    const opts = {
+      label: document.getElementById('shareLabel').value.trim(),
+      photos: document.getElementById('sharePhotos').checked,
+      serials: document.getElementById('shareSerials').checked
+    };
+    const expDays = parseInt(document.getElementById('shareExpiry').value);
+    const expires_at = expDays > 0 ? new Date(Date.now() + expDays * 86400000).toISOString() : null;
+    const snapshot = await buildShareSnapshot(opts);
+    const { data, error } = await window.sbClient.from('shares')
+      .insert({ owner: CloudSync.uid, label: opts.label || null, snapshot, expires_at })
+      .select('token').single();
+    if (error) throw error;
+    const url = shareUrl(data.token);
+    const box = document.getElementById('shareResult');
+    box.style.display = 'block';
+    box.innerHTML = `<div class="share-result-box"><div style="font-weight:600;margin-bottom:6px;">&#10003; Share link created</div>
+      <div class="share-url">${esc(url)}</div>
+      <div style="margin-top:8px;"><button class="btn btn-small btn-primary" onclick="copyShareLink('${esc(url)}')">Copy link</button></div></div>`;
+    document.getElementById('shareLabel').value = '';
+    renderSharesList();
+  } catch (e) {
+    toast('Could not create share link: ' + (e.message || e), 'error');
+  } finally { btn.disabled = false; btn.textContent = 'Create share link'; }
+}
+
+function copyShareLink(url) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => toast('Link copied to clipboard.', 'success'))
+      .catch(() => toast('Copy failed — select and copy the link manually.', 'error'));
+  } else { toast('Copy not supported — select the link manually.', 'info'); }
+}
+
+async function renderSharesList() {
+  const list = document.getElementById('shareList');
+  if (!list) return;
+  list.innerHTML = '<div style="color:var(--text3);font-size:0.8rem;">Loading…</div>';
+  const { data, error } = await window.sbClient.from('shares')
+    .select('token,label,created_at,expires_at').eq('owner', CloudSync.uid).order('created_at', { ascending: false });
+  if (error) { list.innerHTML = '<div style="color:var(--red);font-size:0.8rem;">Could not load shares.</div>'; return; }
+  if (!data.length) { list.innerHTML = '<div style="color:var(--text3);font-size:0.8rem;">No active share links.</div>'; return; }
+  const now = Date.now();
+  list.innerHTML = data.map(s => {
+    const url = shareUrl(s.token);
+    const exp = s.expires_at ? (new Date(s.expires_at).getTime() < now ? 'Expired' : 'Expires ' + fmtDate(s.expires_at)) : 'No expiry';
+    return `<div class="share-row"><div class="share-row-info">
+      <div class="share-row-label">${esc(s.label || 'Untitled share')}</div>
+      <div class="share-row-meta">${exp} &middot; created ${fmtDate(s.created_at)}</div>
+      <div class="share-url">${esc(url)}</div></div>
+      <button class="btn btn-small btn-outline" onclick="copyShareLink('${esc(url)}')">Copy</button>
+      <button class="btn btn-small btn-danger" onclick="revokeShare('${s.token}')">Revoke</button></div>`;
+  }).join('');
+}
+
+async function revokeShare(token) {
+  if (!confirm('Revoke this share link? Anyone using it will immediately lose access.')) return;
+  const { error } = await window.sbClient.from('shares').delete().eq('token', token).eq('owner', CloudSync.uid);
+  if (error) { toast('Could not revoke: ' + error.message, 'error'); return; }
+  toast('Share link revoked.', 'success');
+  renderSharesList();
+}
+
 function updateCaliberFilter() {
   const sel = document.getElementById('filterCaliber');
   const cur = sel.value;
