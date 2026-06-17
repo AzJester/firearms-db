@@ -746,6 +746,33 @@
   </div>
 </div>
 
+<!-- FFL Dealer Import Modal -->
+<div class="modal-overlay" id="dealerImportModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Import FFL Dealers</h2>
+      <button class="modal-close" onclick="closeDealerImportModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.86rem;color:var(--text2);margin:0 0 14px;">Load a ready-made starter list, or paste your own dealers as JSON. Duplicates (same name + address) are skipped.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+        <button class="btn btn-secondary" onclick="loadAZDealers()">&#11015;&#65039; Load Arizona starter list</button>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:0.8rem;color:var(--text2);margin-bottom:16px;">
+        &#9888;&#65039; FFL license numbers are left blank &mdash; verify each dealer&rsquo;s current license at the ATF <a href="https://fflezcheck.atf.gov/" target="_blank" rel="noopener" style="color:var(--accent);">FFL eZ Check</a> before transferring a firearm.
+      </div>
+      <div class="form-group full">
+        <label>Paste dealer JSON (array of objects)</label>
+        <textarea id="dealerImportText" rows="8" placeholder='[{"name":"Example Guns","phone":"(555) 123-4567","address":"123 Main St, City, AZ","website":"https://...","notes":"..."}]'></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeDealerImportModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="importDealersFromText()">Import pasted</button>
+    </div>
+  </div>
+</div>
+
 <!-- Image Crop Modal -->
 <div class="modal-overlay" id="cropModal">
   <div class="modal" style="max-width:600px;">
