@@ -41,6 +41,31 @@ const IDB_STORE = 'images';
 function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 6); }
 
 // =====================================================
+// TOAST NOTIFICATIONS (replaces native toast())
+// =====================================================
+function toast(message, type, timeout) {
+  message = (message == null) ? '' : String(message);
+  if (!type) {
+    if (/\b(fail|failed|error|invalid|unable|denied|cannot|no )/i.test(message)) type = 'error';
+    else if (/\b(success|saved|imported|exported|added|updated|deleted|removed|restored|complete|copied|done)/i.test(message)) type = 'success';
+    else type = 'info';
+  }
+  const host = document.getElementById('toastHost');
+  if (!host) { console.warn('[toast]', message); return; }
+  const icon = type === 'success' ? '&#10003;' : type === 'error' ? '&#9888;' : '&#8505;';
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML = '<span class="toast-icon">' + icon + '</span><div class="toast-msg"></div>' +
+                 '<button class="toast-close" aria-label="Dismiss">&times;</button>';
+  el.querySelector('.toast-msg').textContent = message;
+  const remove = () => { el.classList.add('hide'); setTimeout(() => el.remove(), 200); };
+  el.querySelector('.toast-close').onclick = remove;
+  host.appendChild(el);
+  setTimeout(remove, timeout || (type === 'error' ? 6000 : 3800));
+}
+window.toast = toast;
+
+// =====================================================
 // INDEXEDDB IMAGE STORAGE
 // =====================================================
 function openImageDB() {
@@ -265,7 +290,7 @@ function updateTagFilter() {
 function checkBrowserSupport() { return ('showSaveFilePicker' in window); }
 
 async function createNewFile() {
-  if (!checkBrowserSupport()) { alert('Your browser does not support the File System Access API. Please use Chrome or Edge.'); return; }
+  if (!checkBrowserSupport()) { toast('Your browser does not support the File System Access API. Please use Chrome or Edge.'); return; }
   try {
     fileHandle = await window.showSaveFilePicker({
       suggestedName: 'firearms_database.json',
@@ -275,11 +300,11 @@ async function createNewFile() {
     currentPassword = null;
     await writeToDisk();
     onFileConnected();
-  } catch (e) { if (e.name !== 'AbortError') alert('Could not create file: ' + e.message); }
+  } catch (e) { if (e.name !== 'AbortError') toast('Could not create file: ' + e.message); }
 }
 
 async function openExistingFile() {
-  if (!checkBrowserSupport()) { alert('Your browser does not support the File System Access API. Please use Chrome or Edge.'); return; }
+  if (!checkBrowserSupport()) { toast('Your browser does not support the File System Access API. Please use Chrome or Edge.'); return; }
   try {
     const [handle] = await window.showOpenFilePicker({
       types: [{ description: 'JSON Database', accept: { 'application/json': ['.json'] } }]
@@ -287,7 +312,7 @@ async function openExistingFile() {
     fileHandle = handle;
     await readFromDisk();
     onFileConnected();
-  } catch (e) { if (e.name !== 'AbortError') alert('Could not open file: ' + e.message); }
+  } catch (e) { if (e.name !== 'AbortError') toast('Could not open file: ' + e.message); }
 }
 
 async function readFromDisk() {
@@ -347,7 +372,7 @@ async function readFromDisk() {
   } catch (e) {
     if (e.message === 'Password required') return;
     console.error('Read failed:', e);
-    alert('Could not read the file.');
+    toast('Could not read the file.');
     db = { version: 3, encrypted: false, firearms: [], ammo: [], accessories: [], backups: [], settings: {}, auditTrail: [] };
   }
 }
@@ -366,7 +391,7 @@ async function writeToDisk() {
     showSaveIndicator();
   } catch (e) {
     console.error('Write failed:', e);
-    alert('Failed to save to disk: ' + e.message);
+    toast('Failed to save to disk: ' + e.message);
     disconnectFile();
   }
 }
@@ -481,13 +506,13 @@ function closeSettingsModal() {
 async function setEncryption() {
   const pwd = document.getElementById('newPassword').value.trim();
   const conf = document.getElementById('confirmPassword').value.trim();
-  if (!pwd) { alert('Please enter a password.'); return; }
-  if (pwd !== conf) { alert('Passwords do not match.'); return; }
+  if (!pwd) { toast('Please enter a password.'); return; }
+  if (pwd !== conf) { toast('Passwords do not match.'); return; }
   db.encrypted = true;
   currentPassword = pwd;
   await saveData();
   closeSettingsModal();
-  alert('Encryption enabled. Your database is now encrypted.');
+  toast('Encryption enabled. Your database is now encrypted.');
   location.reload();
 }
 
@@ -497,7 +522,7 @@ async function removeEncryption() {
   currentPassword = null;
   await saveData();
   closeSettingsModal();
-  alert('Encryption removed.');
+  toast('Encryption removed.');
   location.reload();
 }
 
@@ -505,7 +530,7 @@ function closePasswordModal() { document.getElementById('passwordModal').classLi
 
 async function handlePasswordSubmit() {
   const pwd = document.getElementById('passwordInput').value;
-  if (!pwd) { alert('Please enter the password.'); return; }
+  if (!pwd) { toast('Please enter the password.'); return; }
   try {
     const file = await fileHandle.getFile();
     const text = await file.text();
@@ -520,14 +545,14 @@ async function handlePasswordSubmit() {
     document.getElementById('passwordModal').classList.remove('open');
     document.getElementById('passwordInput').value = '';
     onFileConnected();
-  } catch (e) { alert('Incorrect password or decryption failed.'); }
+  } catch (e) { toast('Incorrect password or decryption failed.'); }
 }
 
 // =====================================================
 // BACKUPS
 // =====================================================
 function openBackupModal() {
-  if (db.backups.length === 0) { alert('No backups available.'); return; }
+  if (db.backups.length === 0) { toast('No backups available.'); return; }
   const list = document.getElementById('backupList');
   list.innerHTML = db.backups.map((b, i) => `
     <div class="backup-item" onclick="selectBackup(${i})">
@@ -551,7 +576,7 @@ async function selectBackup(index) {
   await saveData();
   closeBackupModal();
   render();
-  alert('Backup restored successfully.');
+  toast('Backup restored successfully.');
 }
 
 // =====================================================
@@ -1032,7 +1057,7 @@ document.getElementById('fStatus').addEventListener('change', toggleDispositionF
 async function saveFirearm() {
   const make=document.getElementById('fMake').value.trim();
   const model=document.getElementById('fModel').value.trim();
-  if(!make&&!model){alert('Please enter at least a Make or Model.');return;}
+  if(!make&&!model){toast('Please enter at least a Make or Model.');return;}
 
   const isNFA=document.getElementById('fIsNFA').checked;
   const status = document.getElementById('fStatus').value;
@@ -1234,7 +1259,7 @@ function closeAmmoModal() { document.getElementById('ammoModal').classList.remov
 
 async function saveAmmo() {
   const caliber = document.getElementById('aCaliber').value.trim();
-  if (!caliber) { alert('Please enter a caliber.'); return; }
+  if (!caliber) { toast('Please enter a caliber.'); return; }
   const data = {
     id: editingAmmoId || generateId(), caliber,
     brand: document.getElementById('aBrand').value.trim(),
@@ -1322,7 +1347,7 @@ function populateFirearmDropdown() {
 
 async function saveAccessory() {
   const name = document.getElementById('accName').value.trim();
-  if (!name) { alert('Please enter an accessory name.'); return; }
+  if (!name) { toast('Please enter an accessory name.'); return; }
   const data = {
     id: editingAccessoryId || generateId(), name,
     category: document.getElementById('accCategory').value,
@@ -1609,7 +1634,7 @@ function viewReceiptInBrowser(id, type) {
 // INSURANCE REPORT PDF
 // =====================================================
 async function exportInsuranceReport() {
-  if (db.firearms.length === 0) { alert('No firearms to export.'); return; }
+  if (db.firearms.length === 0) { toast('No firearms to export.'); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   doc.setFontSize(16); doc.text('Personal Firearms Inventory Report', 14, 15);
@@ -1637,7 +1662,7 @@ async function openCameraModal() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
     document.getElementById('cameraFeed').srcObject = stream;
-  } catch (e) { alert('Could not access camera: ' + e.message); closeCameraModal(); }
+  } catch (e) { toast('Could not access camera: ' + e.message); closeCameraModal(); }
 }
 
 function closeCameraModal() {
@@ -1656,21 +1681,21 @@ async function captureSnapshot() {
     const { data: { text } } = await Tesseract.recognize(canvas, 'eng');
     document.getElementById('scannedText').value = text.trim();
     document.getElementById('ocrResult').style.display = 'block';
-  } catch (e) { alert('OCR error: ' + e.message); }
+  } catch (e) { toast('OCR error: ' + e.message); }
 }
 
 function searchScannedSerial() {
   const text = document.getElementById('scannedText').value.trim();
   const found = db.firearms.find(f => (f.serial || '').toLowerCase().includes(text.toLowerCase()));
   if (found) { closeCameraModal(); openDetail(found.id); }
-  else alert('No firearm found with that serial number.');
+  else toast('No firearm found with that serial number.');
 }
 
 // =====================================================
 // EXCEL EXPORT
 // =====================================================
 function exportExcel() {
-  if(db.firearms.length===0){alert('No data to export.');return;}
+  if(db.firearms.length===0){toast('No data to export.');return;}
   const allRows=db.firearms.map(f=>({'Make':f.make||'','Model':f.model||'','Serial Number':f.serial||'','Caliber':f.caliber||'','Type':f.type||'','Barrel Length':f.barrel||'','Date Acquired':fmtDate(f.dateAcquired),'Purchase Price':f.price?parseFloat(f.price):'','Condition':f.condition||'','Status':f.status||'Active','NFA Item':f.isNFA?'Yes':'No','Tags':(f.tags||[]).join(', '),'Notes':(f.notes||'').replace(/<[^>]*>/g,'')}));
   const nfaRows=db.firearms.filter(f=>f.isNFA).map(f=>{
     let w='';if(f.dateSubmitted&&f.dateApproved)w=Math.round((new Date(f.dateApproved)-new Date(f.dateSubmitted))/86400000);
@@ -1693,7 +1718,7 @@ function exportExcel() {
 // JSON EXPORT / IMPORT
 // =====================================================
 function exportJSON() {
-  if(db.firearms.length===0){alert('No data to export.');return;}
+  if(db.firearms.length===0){toast('No data to export.');return;}
   const b=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
   const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;
   a.download='firearms_database_'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(u);
@@ -1711,9 +1736,9 @@ function handleImport(event){
       if(confirm(`Import ${toImport.length} firearm(s)? This will ADD to your existing database.`)){
         toImport.forEach(item=>{if(!item.id)item.id=generateId();if(!item.tags)item.tags=[];db.firearms.push(item);});
         addAuditEntry('create', 'import', toImport.length + ' firearms', 'Bulk import');
-        await saveData();render();alert(`Imported ${toImport.length} firearm(s) successfully.`);
+        await saveData();render();toast(`Imported ${toImport.length} firearm(s) successfully.`);
       }
-    }catch(err){alert('Invalid file format.');}
+    }catch(err){toast('Invalid file format.');}
   };
   reader.readAsText(file);event.target.value='';
 }
@@ -1826,7 +1851,7 @@ function closeWishlistModal() { document.getElementById('wishlistModal').classLi
 async function saveWishlistItem() {
   const make = document.getElementById('wMake').value.trim();
   const model = document.getElementById('wModel').value.trim();
-  if (!make && !model) { alert('Enter at least a Make or Model.'); return; }
+  if (!make && !model) { toast('Enter at least a Make or Model.'); return; }
   const data = {
     id: editingWishlistId || generateId(), make, model,
     caliber: document.getElementById('wCaliber').value.trim(),
@@ -1915,7 +1940,7 @@ function closeDealerModal() { document.getElementById('dealerModal').classList.r
 
 async function saveDealer() {
   const name = document.getElementById('dName').value.trim();
-  if (!name) { alert('Enter a dealer name.'); return; }
+  if (!name) { toast('Enter a dealer name.'); return; }
   const data = { id: editingDealerId || generateId(), name, ffl: document.getElementById('dFFL').value.trim(), phone: document.getElementById('dPhone').value.trim(), email: document.getElementById('dEmail').value.trim(), address: document.getElementById('dAddress').value.trim(), website: document.getElementById('dWebsite').value.trim(), notes: document.getElementById('dNotes').value.trim() };
   if (editingDealerId) { const i = db.dealers.findIndex(x => x.id === editingDealerId); if (i > -1) db.dealers[i] = data; addAuditEntry('edit','dealer',name,''); }
   else { db.dealers.push(data); addAuditEntry('create','dealer',name,''); }
@@ -2074,7 +2099,7 @@ function getQRDataURL() {
 
 function downloadQR() {
   const dataUrl = getQRDataURL();
-  if (!dataUrl) { alert('No QR code to download.'); return; }
+  if (!dataUrl) { toast('No QR code to download.'); return; }
   const f = db.firearms.find(x => x.id === currentQRFirearmId);
   const a = document.createElement('a');
   a.href = dataUrl;
@@ -2109,7 +2134,7 @@ function handleCSVImport(event) {
       const text = e.target.result;
       const sep = text.includes('\t') ? '\t' : ',';
       const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-      if (lines.length < 2) { alert('CSV must have a header row and at least one data row.'); return; }
+      if (lines.length < 2) { toast('CSV must have a header row and at least one data row.'); return; }
       const headers = lines[0].split(sep).map(h => h.replace(/^"|"$/g,'').trim().toLowerCase());
       const firearms = [];
       for (let i = 1; i < lines.length; i++) {
@@ -2136,14 +2161,14 @@ function handleCSVImport(event) {
         };
         if (f.make || f.model) firearms.push(f);
       }
-      if (firearms.length === 0) { alert('No valid rows found.'); return; }
+      if (firearms.length === 0) { toast('No valid rows found.'); return; }
       if (confirm('Import ' + firearms.length + ' firearm(s) from CSV? This will ADD to your existing database.')) {
         firearms.forEach(f => db.firearms.push(f));
         addAuditEntry('create','import',firearms.length+' firearms','CSV import');
         await saveData(); render();
-        alert('Imported ' + firearms.length + ' firearm(s) from CSV.');
+        toast('Imported ' + firearms.length + ' firearm(s) from CSV.');
       }
-    } catch (err) { alert('CSV parse error: ' + err.message); }
+    } catch (err) { toast('CSV parse error: ' + err.message); }
   };
   reader.readAsText(file); event.target.value = '';
 }
@@ -2171,7 +2196,7 @@ function duplicateFirearm(id) {
   db.firearms.push(clone);
   addAuditEntry('create','firearm',(clone.make||'')+' '+(clone.model||''),'Duplicated from '+f.serial);
   saveData(); render();
-  alert('Duplicated! Edit the new entry to update the serial number.');
+  toast('Duplicated! Edit the new entry to update the serial number.');
 }
 
 // =====================================================
@@ -2224,7 +2249,7 @@ function generateCustomReport() {
     const f = REPORT_FIELDS.find(x => x.key === cb.dataset.field);
     if (f) fields.push(f);
   });
-  if (fields.length === 0) { alert('Select at least one field.'); return; }
+  if (fields.length === 0) { toast('Select at least one field.'); return; }
   const format = document.querySelector('input[name="rptFormat"]:checked').value;
   const title = document.getElementById('reportTitle').value.trim() || 'Firearms Report';
   const includeNFA = document.getElementById('rptNFA').checked;
@@ -2587,7 +2612,7 @@ function clearBulkSelection() {
 
 async function bulkAddTag() {
   const tag = document.getElementById('bulkTagInput').value.trim();
-  if (!tag) { alert('Enter a tag name.'); return; }
+  if (!tag) { toast('Enter a tag name.'); return; }
   let count = 0;
   bulkSelected.forEach(id => {
     const f = db.firearms.find(x => x.id === id);
@@ -2604,7 +2629,7 @@ async function bulkAddTag() {
 
 async function bulkRemoveTag() {
   const tag = document.getElementById('bulkTagInput').value.trim();
-  if (!tag) { alert('Enter a tag name to remove.'); return; }
+  if (!tag) { toast('Enter a tag name to remove.'); return; }
   let count = 0;
   bulkSelected.forEach(id => {
     const f = db.firearms.find(x => x.id === id);
@@ -2695,7 +2720,7 @@ async function saveToFile() {
       URL.revokeObjectURL(u);
     }
   } catch (e) {
-    if (e.name !== 'AbortError') alert('Save failed: ' + e.message);
+    if (e.name !== 'AbortError') toast('Save failed: ' + e.message);
   }
 }
 
