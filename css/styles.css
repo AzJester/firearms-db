@@ -23,6 +23,23 @@
   --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
   --shadow-hover: 0 4px 12px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
   --chart-bar: var(--accent);
+
+  /* ---- Design tokens (v3.8) ---- */
+  /* Spacing scale on a 4/8px base — use these for every gap/padding/margin */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px;
+  /* One radius scale, applied uniformly to surfaces */
+  --radius-sm: 6px; --radius: 10px; --radius-lg: 14px; --radius-pill: 999px;
+  /* Limited modular type scale (≈1.2 ratio) */
+  --fs-label: 0.72rem; --fs-sm: 0.82rem; --fs-body: 0.92rem;
+  --fs-h3: 1.05rem; --fs-h2: 1.3rem; --fs-kpi: 1.5rem; --fs-display: 2.2rem;
+  /* Motion: short durations + intentional easing */
+  --ease-out: cubic-bezier(0.2, 0, 0, 1); --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --dur-fast: 120ms; --dur: 180ms; --dur-slow: 240ms;
+  /* Elevation-by-surface: in light these are ~white (depth comes from shadow) */
+  --elev-1: var(--card-bg); --elev-2: #ffffff; --elev-3: #ffffff;
+  /* Skeleton shimmer */
+  --skeleton-base: #e9edf2; --skeleton-sheen: #f3f6f9;
 }
 
 /* ===== DARK THEME ===== */
@@ -49,6 +66,17 @@
   --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
   --shadow-hover: 0 8px 24px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.35);
   --chart-bar: #60a5fa;
+
+  /* ---- Dark-theme token overrides (v3.8) ---- */
+  /* Shadows read weakly on dark, so express elevation by LIGHTNESS:
+     each step up is a lighter surface (page < card < modal/menu/popover). */
+  --elev-1: #1e293b;   /* resting cards, table body */
+  --elev-2: #25344a;   /* modals, menus, sticky headers, popovers */
+  --elev-3: #2d3e57;   /* highest overlays */
+  /* Lift borders so inputs / controls / focus rings clear ~3:1 on dark */
+  --border: #475569;
+  --border-light: #313f54;
+  --skeleton-base: #1e293b; --skeleton-sheen: #2a3a52;
 }
 
 /* ===== RESET & BASE ===== */
@@ -1690,3 +1718,88 @@ table.data-table th { letter-spacing: 0.3px; }
   cursor: pointer; padding: 0 4px; opacity: 0.85;
 }
 .update-banner-x:hover { opacity: 1; }
+
+/* ============================================================
+   VISUAL SYSTEM v3.8 — design tokens adopted across surfaces
+   ============================================================ */
+
+/* --- One consistent corner radius, applied in three tiers --- */
+.card, .dash-card, .modal, .detail-panel, .table-container, .auth-card,
+.firstrun-card, .welcome-panel, .menu-panel, .cmdk-box {
+  border-radius: var(--radius-lg);
+}
+.btn, .search-box, select.filter-select, .form-group input, .form-group select,
+.form-group textarea, .rte-wrapper, .sort-select, .dealer-search, .dealer-sort,
+.view-toggle, .tags-input-container, .toast, .ffl-card, .detail-section,
+.detail-field, .detail-notes, .backup-item, .doc-chip, .reminder-item,
+.dash-alert, .img-upload-area {
+  border-radius: var(--radius);
+}
+.img-thumbnail, table.data-table .thumb, table.data-table .thumb-placeholder,
+.dh-img { border-radius: var(--radius-sm); }
+.tag-pill, .dealer-chip, .wishlist-priority, .ffl-area-badge, .chip,
+.sync-pill, .investment-badge { border-radius: var(--radius-pill); }
+
+/* --- Tabular figures: digits line up by place value (Inter `tnum`) --- */
+.tnum, .dash-kpi-value, .dash-big-num, .build-summary-value,
+.header-stats .stat-val, .dash-list-item .value, .dash-bar-val,
+table.data-table td.num, table.data-table th.num {
+  font-variant-numeric: tabular-nums;
+}
+/* Serial / SKU strings: slashed zero so 0 is never read as O */
+.mono-id { font-variant-numeric: slashed-zero tabular-nums; }
+
+/* --- Numeric table columns: right-align the cell AND its header --- */
+table.data-table td.num, table.data-table th.num { text-align: right; }
+
+/* --- Status pills pair colour with a glyph (icons injected in JS),
+       so meaning never rests on colour alone (WCAG 1.4.1) --- */
+.stamp-badge .si, .stamp-tag .si, .dash-nfa-pill .si { margin-right: 3px; }
+
+/* --- Depth: elevation expressed by surface lightness on overlays
+       (this is what makes dark-mode layers read where shadows are weak) --- */
+.modal, .menu-panel, .cmdk-box, .detail-panel, .auth-card, .firstrun-card,
+.welcome-panel, .toast, .tags-suggestions { background: var(--elev-2); }
+
+/* --- Motion: short, eased hover lift; honour reduced-motion --- */
+.card { transition: transform var(--dur) var(--ease-out),
+  box-shadow var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .card:hover { transform: none; }
+  .card:hover .card-img { transform: none; }
+}
+
+/* --- Imagery: uniform aspect ratio + neutral backdrop for cut-out PNGs --- */
+.card-img, .card-img-placeholder {
+  height: auto; aspect-ratio: 3 / 2; object-fit: cover; object-position: center;
+}
+.dh-img { object-position: center; }
+
+/* --- Skeleton loading screens (perceived performance) --- */
+@keyframes skeletonShimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+.skeleton-card {
+  background: var(--card-bg); border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow);
+}
+.sk-block {
+  background: var(--skeleton-base);
+  background-image: linear-gradient(90deg,
+    var(--skeleton-base) 0, var(--skeleton-sheen) 40px, var(--skeleton-base) 80px);
+  background-size: 200px 100%; background-repeat: no-repeat;
+  animation: skeletonShimmer 1.2s ease-in-out infinite;
+}
+.sk-img { width: 100%; aspect-ratio: 3 / 2; }
+.sk-body { padding: 6px 0 14px; }
+.sk-line { height: 12px; border-radius: 6px; margin: 10px 16px; }
+.sk-line.short { width: 45%; }
+.sk-line.mid { width: 70%; }
+@media (prefers-reduced-motion: reduce) { .sk-block { animation: none; } }

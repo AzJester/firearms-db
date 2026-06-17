@@ -1092,9 +1092,9 @@ function renderDashboard() {
 
   const nfaCard = '<div class="dash-card"><h3>NFA Items (' + nfaItems.length + ')</h3>' +
     '<div class="dash-nfa-status">' +
-      '<div class="dash-nfa-pill" style="background:var(--green-bg);color:var(--green);">Approved: ' + nfaApproved + '</div>' +
-      '<div class="dash-nfa-pill" style="background:var(--yellow-bg);color:#8a6d00;">Pending: ' + nfaPending + '</div>' +
-      (nfaDenied > 0 ? '<div class="dash-nfa-pill" style="background:var(--red-light);color:var(--red);">Denied: ' + nfaDenied + '</div>' : '') +
+      '<div class="dash-nfa-pill" style="background:var(--green-bg);color:var(--green);"><span class="si">✓</span>Approved: ' + nfaApproved + '</div>' +
+      '<div class="dash-nfa-pill" style="background:var(--yellow-bg);color:#8a6d00;"><span class="si">⧖</span>Pending: ' + nfaPending + '</div>' +
+      (nfaDenied > 0 ? '<div class="dash-nfa-pill" style="background:var(--red-light);color:var(--red);"><span class="si">✕</span>Denied: ' + nfaDenied + '</div>' : '') +
     '</div>' +
     (avgWait !== null ? '<div class="dash-list-item" style="margin-top:12px;"><span class="label">Avg pending wait</span><span class="value">' + avgWait + ' days</span></div>' : '') +
     (pendingNFA.length ? '<div style="margin-top:10px;"><h4 style="font-size:0.74rem;color:var(--text3);margin-bottom:6px;">PENDING</h4>' +
@@ -1122,17 +1122,23 @@ function renderDashboard() {
     const css = getComputedStyle(document.body);
     const cv = (k, d) => (css.getPropertyValue(k) || d).trim();
     const accent = cv('--accent', '#1a3a5c'), gridc = cv('--border-light', '#e8eaed'), textc = cv('--text2', '#5f6368');
-    const palette = ['#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#f59e0b', '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1'];
+    // Consistent chart styling across every canvas; Inter to match the UI.
+    Chart.defaults.font.family = "'Inter','Segoe UI',system-ui,sans-serif";
+    Chart.defaults.color = textc;
+    // Categorical palette capped at 7 hues (more than that adds clutter).
+    const palette = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'];
     const mk = (id, cfg) => { const c = document.getElementById(id); if (!c) return; try { _dashCharts.push(new Chart(c, cfg)); } catch (e) { console.warn('chart ' + id, e); } };
+    // Declutter: no category-axis gridlines, no axis borders, faint value grid.
     const barOpts = { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-      scales: { x: { ticks: { color: textc, precision: 0 }, grid: { color: gridc } }, y: { ticks: { color: textc }, grid: { display: false } } } };
+      scales: { x: { ticks: { color: textc, precision: 0 }, grid: { color: gridc }, border: { display: false } },
+                y: { ticks: { color: textc }, grid: { display: false }, border: { display: false } } } };
     const typeLabels = Object.keys(types), typeData = Object.values(types);
     if (typeData.length) mk('typeChartCanvas', { type: 'doughnut', data: { labels: typeLabels, datasets: [{ data: typeData, backgroundColor: palette, borderWidth: 0 }] },
       options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { color: textc, boxWidth: 12, padding: 8, font: { size: 11 } } } } } });
     if (calEntries.length) mk('calChartCanvas', { type: 'bar', data: { labels: calEntries.map(e => e[0]), datasets: [{ data: calEntries.map(e => e[1]), backgroundColor: '#10b981', borderRadius: 4 }] }, options: barOpts });
     if (makeEntries.length) mk('mfgChartCanvas', { type: 'bar', data: { labels: makeEntries.map(e => e[0]), datasets: [{ data: makeEntries.map(e => e[1]), backgroundColor: '#8b5cf6', borderRadius: 4 }] }, options: barOpts });
     if (hasValueChart) mk('valueChartCanvas', { type: 'line', data: { labels: hist.map(h => h.date), datasets: [{ label: 'Value', data: hist.map(h => h.value), borderColor: accent, backgroundColor: accent + '22', fill: true, tension: 0.3, pointRadius: hist.length > 30 ? 0 : 3, borderWidth: 2 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => money(c.parsed.y) } } }, scales: { x: { grid: { color: gridc }, ticks: { color: textc, maxTicksLimit: 8 } }, y: { grid: { color: gridc }, ticks: { color: textc, callback: v => '$' + Number(v).toLocaleString() } } } } });
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => money(c.parsed.y) } } }, scales: { x: { grid: { display: false }, border: { display: false }, ticks: { color: textc, maxTicksLimit: 8 } }, y: { grid: { color: gridc }, border: { display: false }, ticks: { color: textc, callback: v => '$' + Number(v).toLocaleString() } } } } });
   }
 }
 
@@ -1245,7 +1251,7 @@ function renderAmmoTab() {
     return;
   }
 
-  h += '<table class="data-table"><thead><tr><th onclick="sortTable(\'brand\')">Brand / Type</th><th onclick="sortTable(\'caliber\')">Caliber</th><th onclick="sortTable(\'quantity\')">Quantity</th><th onclick="sortTable(\'purchaseDate\')">Purchase Date</th><th onclick="sortTable(\'pricePerRound\')">Price/Round</th><th>Total Cost</th><th onclick="sortTable(\'location\')">Location</th><th>Receipt</th><th></th></tr></thead><tbody>';
+  h += '<table class="data-table"><thead><tr><th onclick="sortTable(\'brand\')">Brand / Type</th><th onclick="sortTable(\'caliber\')">Caliber</th><th class="num" onclick="sortTable(\'quantity\')">Quantity</th><th onclick="sortTable(\'purchaseDate\')">Purchase Date</th><th class="num" onclick="sortTable(\'pricePerRound\')">Price/Round</th><th class="num">Total Cost</th><th onclick="sortTable(\'location\')">Location</th><th>Receipt</th><th></th></tr></thead><tbody>';
 
   items.forEach(a => {
     const tc2 = (parseInt(a.quantity) || 0) * (parseFloat(a.pricePerRound) || 0);
@@ -1254,10 +1260,10 @@ function renderAmmoTab() {
     h += `<tr style="cursor:pointer;" onclick="editAmmo('${a.id}')" class="${low?'low-stock':''}">
       <td>${esc(a.brand||'--')}</td>
       <td>${esc(a.caliber||'--')}</td>
-      <td>${(parseInt(a.quantity) || 0).toLocaleString()}${low?'<span class="low-stock-badge">LOW</span>':''}</td>
+      <td class="num">${(parseInt(a.quantity) || 0).toLocaleString()}${low?'<span class="low-stock-badge">LOW</span>':''}</td>
       <td>${fmtDate(a.purchaseDate)}</td>
-      <td>$${(parseFloat(a.pricePerRound) || 0).toFixed(2)}</td>
-      <td>$${tc2.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+      <td class="num">$${(parseFloat(a.pricePerRound) || 0).toFixed(2)}</td>
+      <td class="num">$${tc2.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
       <td>${esc(a.location||'--')}</td>
       <td>${hasReceipt ? '<button class="btn btn-small btn-outline" onclick="event.stopPropagation();viewReceiptInBrowser(\''+a.id+'\',\'ammo\')">View</button> <a href="'+a.receipt+'" download="'+(a.receiptName||'receipt')+'" onclick="event.stopPropagation();" class="btn btn-small btn-file" style="text-decoration:none;display:inline-block;">DL</a>' : '<span style="color:var(--text3);">--</span>'}</td>
       <td style="text-align:right;white-space:nowrap;">
@@ -1291,6 +1297,20 @@ async function buildThumbnails() {
 }
 window.buildThumbnails = buildThumbnails;
 
+// Skeleton cards shown during the initial boot / cloud pull so the grid reads
+// as "loading structure" instead of blank; render() replaces them when ready.
+function showGridSkeleton(n) {
+  const grid = document.getElementById('cardGrid');
+  if (!grid) return;
+  grid.style.display = 'grid';
+  grid.innerHTML = Array.from({ length: n || 8 }).map(() =>
+    '<div class="skeleton-card" aria-hidden="true"><div class="sk-block sk-img"></div>' +
+    '<div class="sk-body"><div class="sk-block sk-line mid"></div>' +
+    '<div class="sk-block sk-line short"></div>' +
+    '<div class="sk-block sk-line"></div></div></div>').join('');
+}
+window.showGridSkeleton = showGridSkeleton;
+
 function renderCards(items) {
   document.getElementById('cardGrid').innerHTML = items.map(f => {
     const img0 = f.images && f.images.length > 0 ? (thumbCache[f.images[0]] || imagesDb[f.images[0]]) : null;
@@ -1299,7 +1319,7 @@ function renderCards(items) {
     let stamp = '';
     if (f.isNFA && f.stampStatus) {
       const c = f.stampStatus==='Approved'?'stamp-approved':f.stampStatus==='Pending'?'stamp-pending':'stamp-submitted';
-      stamp = `<div class="stamp-badge ${c}">${esc(f.stampStatus)}</div>`;
+      stamp = `<div class="stamp-badge ${c}">${stampIcon(f.stampStatus)}${esc(f.stampStatus)}</div>`;
     }
     const p = f.price ? money(f.price) : '--';
     const disposed = (f.status && f.status !== 'Active') ? ' disposed' : '';
@@ -1318,10 +1338,10 @@ function renderCards(items) {
 }
 
 function renderTable(items) {
-  const cols = [{key:'_cb',label:'',sortable:false},{key:'_img',label:'',sortable:false},{key:'make',label:'Make'},{key:'model',label:'Model'},{key:'serial',label:'Serial #'},{key:'caliber',label:'Caliber'},{key:'type',label:'Type'},{key:'barrel',label:'Barrel'},{key:'condition',label:'Condition'},{key:'price',label:'Price'},{key:'dateAcquired',label:'Acquired'},{key:'status',label:'Status'},{key:'_nfa',label:'NFA',sortable:false},{key:'_tags',label:'Tags',sortable:false}];
+  const cols = [{key:'_cb',label:'',sortable:false},{key:'_img',label:'',sortable:false},{key:'make',label:'Make'},{key:'model',label:'Model'},{key:'serial',label:'Serial #'},{key:'caliber',label:'Caliber'},{key:'type',label:'Type'},{key:'barrel',label:'Barrel'},{key:'condition',label:'Condition'},{key:'price',label:'Price',num:true},{key:'dateAcquired',label:'Acquired'},{key:'status',label:'Status'},{key:'_nfa',label:'NFA',sortable:false},{key:'_tags',label:'Tags',sortable:false}];
   const arrow = k => sortCol!==k ? '' : `<span class="sort-arrow">${sortDir==='asc'?'&#9650;':'&#9660;'}</span>`;
   let h = '<table class="data-table"><thead><tr>';
-  cols.forEach(c => { const s=c.sortable!==false; h+=`<th ${s?`onclick="sortTable('${c.key}')"`:''}style="${s?'':'cursor:default'}">${c.label}${s?arrow(c.key):''}</th>`; });
+  cols.forEach(c => { const s=c.sortable!==false; h+=`<th class="${c.num?'num':''}" ${s?`onclick="sortTable('${c.key}')"`:''}style="${s?'':'cursor:default'}">${c.label}${s?arrow(c.key):''}</th>`; });
   h += '</tr></thead><tbody>';
 
   items.forEach(f => {
@@ -1329,12 +1349,12 @@ function renderTable(items) {
     const im = tsrc?`<img class="thumb" loading="lazy" src="${tsrc}">` : `<span class="thumb-placeholder">&#10022;</span>`;
     const pr = f.price?money(f.price):'--';
     let nfa='';
-    if(f.isNFA){nfa=`<span class="nfa-tag">${esc(f.nfaType||'NFA')}</span>`;if(f.stampStatus){const c=f.stampStatus==='Approved'?'approved':f.stampStatus==='Pending'?'pending':'submitted';nfa+=` <span class="stamp-tag ${c}">${esc(f.stampStatus)}</span>`;}}
+    if(f.isNFA){nfa=`<span class="nfa-tag">${esc(f.nfaType||'NFA')}</span>`;if(f.stampStatus){const c=f.stampStatus==='Approved'?'approved':f.stampStatus==='Pending'?'pending':'submitted';nfa+=` <span class="stamp-tag ${c}">${stampIcon(f.stampStatus)}${esc(f.stampStatus)}</span>`;}}
     const status = f.status && f.status !== 'Active' ? `<span class="nfa-tag disposed-tag">${esc(f.status)}</span>` : '';
     const pl = getProfitLoss(f);
     const plStr = pl !== null ? ` <span class="${pl>=0?'profit':'loss'}">${money(Math.abs(pl))} ${pl>=0?'+':'-'}</span>` : '';
     const tags = (f.tags && f.tags.length > 0) ? f.tags.map(t => `<span class="tag-pill">${esc(t)}</span>`).join(' ') : '';
-    h+=`<tr onclick="openDetail('${f.id}')" style="cursor:pointer"><td><input type="checkbox" class="card-checkbox table-cb" ${bulkSelected.has(f.id)?'checked':''} onclick="toggleBulkSelect('${f.id}',event)"></td><td>${im}</td><td>${esc(f.make||'--')}</td><td>${esc(f.model||'--')}</td><td>${esc(f.serial||'--')}</td><td>${esc(f.caliber||'--')}</td><td>${esc(f.type||'--')}</td><td>${esc(f.barrel||'--')}</td><td>${esc(f.condition||'--')}</td><td>${pr}</td><td>${fmtDate(f.dateAcquired)}</td><td>${status}${plStr}</td><td>${nfa}</td><td>${tags}</td></tr>`;
+    h+=`<tr onclick="openDetail('${f.id}')" style="cursor:pointer"><td><input type="checkbox" class="card-checkbox table-cb" ${bulkSelected.has(f.id)?'checked':''} onclick="toggleBulkSelect('${f.id}',event)"></td><td>${im}</td><td>${esc(f.make||'--')}</td><td>${esc(f.model||'--')}</td><td class="mono-id">${esc(f.serial||'--')}</td><td>${esc(f.caliber||'--')}</td><td>${esc(f.type||'--')}</td><td>${esc(f.barrel||'--')}</td><td>${esc(f.condition||'--')}</td><td class="num">${pr}</td><td>${fmtDate(f.dateAcquired)}</td><td>${status}${plStr}</td><td>${nfa}</td><td>${tags}</td></tr>`;
   });
 
   h += '</tbody></table>';
@@ -1356,6 +1376,9 @@ function tabEmpty(icon, title, sub, actionHtml) {
 function fmtDate(d) { if(!d) return '--'; const p=d.split('-'); if(p.length!==3) return d; return p[1]+'/'+p[2]+'/'+p[0]; }
 // Currency: always two decimals, e.g. money(1088.3) -> "$1,088.30".
 function money(n) { return '$' + (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+// Distinct status glyph (check / hourglass / partial / cross) so NFA stamp
+// state is conveyed by shape, not colour alone (WCAG 1.4.1 "use of colour").
+function stampIcon(s) { const m = { Approved: '✓', Pending: '⧖', Submitted: '◔', Denied: '✕' }; return m[s] ? ('<span class="si">' + m[s] + '</span>') : ''; }
 // Normalize a user-entered URL for use in href: only allow http(s)/mailto;
 // schemeless input gets https:// prepended; anything else (e.g. javascript:) is neutralized.
 function safeHref(u) {
@@ -3577,6 +3600,7 @@ async function saveToFile() {
 
 async function bootApp(){
   loadTheme();
+  showGridSkeleton();   // visible structure while local cache + cloud pull load
   await openImageDB();
   await openStateDB();
 
