@@ -1480,3 +1480,32 @@ table.data-table .thumb-placeholder {
 .cmdk-foot { display: flex; gap: 16px; justify-content: center; padding: 8px; border-top: 1px solid var(--border-light);
   font-size: 0.68rem; color: var(--text3); }
 @media (max-width: 600px) { .cmdk { padding-top: 6vh; } .cmdk-foot { display: none; } }
+
+/* ===== TOOLBAR POLISH (v3.2) ===== */
+/* Sticky tabs+toolbar so search/filters stay reachable on long lists */
+.sticky-top { position: sticky; top: 0; z-index: 40; background: var(--bg); box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+.header, .file-status-bar { position: relative; z-index: 60; }  /* keep header dropdowns above sticky-top */
+
+/* Filters now tuck behind the Filters button on ALL screen sizes (declutter) */
+.filter-toggle-btn { display: inline-block; }
+.toolbar .filter-select { display: none !important; }
+.toolbar.show-filters .filter-select { display: inline-block !important; }
+.fbtn-count { display: inline-block; background: var(--accent); color: #fff; border-radius: 9px; padding: 0 6px; font-size: 0.7rem; margin-left: 2px; }
+[data-theme="dark"] .fbtn-count { background: #2563eb; }
+
+/* Active-filter chips */
+.filter-chips { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; padding: 8px 24px; background: var(--bg); border-bottom: 1px solid var(--border); }
+.chip { display: inline-flex; align-items: center; gap: 5px; background: var(--accent-light); color: var(--accent); border-radius: 14px; padding: 3px 5px 3px 11px; font-size: 0.75rem; font-weight: 600; }
+.chip button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 3px; border-radius: 50%; }
+.chip button:hover { background: rgba(0,0,0,0.08); }
+.chip-clear { background: none; border: none; color: var(--text2); font-size: 0.74rem; cursor: pointer; text-decoration: underline; padding: 2px 4px; }
+@media (max-width: 600px) { .filter-chips { padding: 8px 16px; } }
+
+/* Nicer empty states */
+.empty-state { text-align: center; padding: 64px 24px; }
+.empty-state .icon { font-size: 3.4rem; color: var(--border); margin-bottom: 6px; }
+.empty-state h3 { font-size: 1.15rem; color: var(--text); margin-bottom: 6px; }
+.empty-state p { color: var(--text2); font-size: 0.9rem; margin-bottom: 18px; }
+.empty-inline { text-align: center; padding: 48px 24px; color: var(--text2); }
+.empty-inline .icon { font-size: 2.6rem; color: var(--border); margin-bottom: 10px; }
+.empty-inline .btn { margin-top: 14px; }
