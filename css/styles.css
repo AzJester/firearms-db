@@ -1508,8 +1508,18 @@ table.data-table .thumb-placeholder {
 .empty-state h3 { font-size: 1.15rem; color: var(--text); margin-bottom: 6px; }
 .empty-state p { color: var(--text2); font-size: 0.9rem; margin-bottom: 18px; }
 .empty-inline { text-align: center; padding: 48px 24px; color: var(--text2); }
-.empty-inline .icon { font-size: 2.6rem; color: var(--border); margin-bottom: 10px; }
+.empty-inline .icon { font-size: 2.6rem; margin-bottom: 10px; opacity: 0.85; }
+.empty-inline h3 { font-size: 1.05rem; color: var(--text); margin-bottom: 6px; }
+.empty-inline p { font-size: 0.88rem; margin: 0 auto; max-width: 380px; line-height: 1.5; }
 .empty-inline .btn { margin-top: 14px; }
+
+/* Accessibility: visible keyboard focus ring for interactive controls */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,
+textarea:focus-visible, [contenteditable]:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 
 /* ===== VISUAL SYSTEM REFRESH (v3.3) ===== */
 /* Header stat pills */
