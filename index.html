@@ -18,6 +18,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <!-- Supabase client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- zip reading for .zip backups -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
 
@@ -48,8 +50,8 @@
     <h2>Welcome &#128075;</h2>
     <p>Your cloud collection is empty. Import your existing data once and it will
        sync to every device automatically.</p>
-    <label for="firstRunFile" class="btn btn-primary">Choose backup file (.json)</label>
-    <input id="firstRunFile" type="file" accept="application/json,.json" style="display:none;">
+    <label for="firstRunFile" class="btn btn-primary">Choose backup file (.json or .zip)</label>
+    <input id="firstRunFile" type="file" accept="application/json,.json,.zip,application/zip" style="display:none;">
     <div id="firstRunStatus" class="firstrun-status"></div>
     <button id="firstRunSkip" class="btn btn-outline btn-small">Skip &mdash; start empty</button>
   </div>
@@ -189,8 +191,8 @@
     <button class="btn btn-small btn-file" id="backupBtn" onclick="openBackupModal()" style="display:none;">Restore Backup</button>
     <button class="btn btn-small btn-outline" id="settingsBtn" onclick="openSettingsModal()" style="display:none;">Settings</button>
     <button class="btn btn-small btn-secondary" onclick="saveToFile()">Save to File</button>
-    <button class="btn btn-small btn-file" onclick="document.getElementById('restoreFile').click()" title="Replace your entire collection with a backup .json file">Restore from File</button>
-    <input id="restoreFile" type="file" accept="application/json,.json" style="display:none;">
+    <button class="btn btn-small btn-file" onclick="document.getElementById('restoreFile').click()" title="Replace your entire collection with a backup .json or .zip file">Restore from File</button>
+    <input id="restoreFile" type="file" accept="application/json,.json,.zip,application/zip" style="display:none;">
     <button class="btn btn-small btn-outline" onclick="CloudSync.syncNow()">Sync Now</button>
     <button class="btn btn-small btn-outline" onclick="Auth.signOut()">Sign Out</button>
   </div>

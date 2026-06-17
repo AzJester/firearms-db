@@ -261,11 +261,24 @@ const CloudSync = {
     await this.push();
   },
 
+  // Read a backup file's JSON text, transparently unzipping .zip archives.
+  async readBackupText(file) {
+    const isZip = /\.zip$/i.test(file.name) || file.type === 'application/zip' ||
+                  file.type === 'application/x-zip-compressed';
+    if (!isZip) return await file.text();
+    if (!window.JSZip) throw new Error('Zip reader not loaded — try the .json instead.');
+    const zip = await window.JSZip.loadAsync(file);
+    const entry = Object.values(zip.files).find(f => !f.dir && /\.json$/i.test(f.name));
+    if (!entry) throw new Error('No .json file found inside that .zip.');
+    return await entry.async('string');
+  },
+
   // ---- one-time restore from a full backup file -------------------
   // Accepts the app's own backup format: {..db, images:{...}} or a bare
-  // firearms array. Loads everything into memory, then pushes to the cloud.
+  // firearms array, as a .json or a .zip containing one. Loads everything
+  // into memory, then pushes to the cloud.
   async restoreFromFile(file) {
-    const text = await file.text();
+    const text = await this.readBackupText(file);
     let data;
     try { data = JSON.parse(text); }
     catch (e) { throw new Error('That file is not valid JSON.'); }
