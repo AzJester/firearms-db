@@ -2508,7 +2508,17 @@ const AZ_FFL_DEALERS = [
   { name: "C-A-L Ranch Stores (Sierra Vista)", phone: "", address: "673 N Highway 90, Sierra Vista, AZ 85635", website: "https://www.calranch.com", notes: "Ranch & farm retailer with firearms counter." },
   { name: "1789 Arms", phone: "(928) 307-1789", address: "206 W Caribbean Dr, Casa Grande, AZ 85122", website: "", notes: "Firearms dealer." },
   { name: "Desert Vista Gun Sales", phone: "(602) 206-3452", address: "8959 S Valley Vista Dr, Casa Grande, AZ 85193", website: "", notes: "Firearms dealer & transfers." },
-  { name: "Elegant Arms", phone: "(520) 233-6971", address: "1216 E Palo Verde Dr, Casa Grande, AZ 85122", website: "", notes: "Firearms dealer." }
+  { name: "Elegant Arms", phone: "(520) 233-6971", address: "1216 E Palo Verde Dr, Casa Grande, AZ 85122", website: "", notes: "Firearms dealer." },
+  // Additional towns — White Mountains, I-40 corridor, Colorado River, southeast
+  { name: "Sharp Shooters", phone: "(928) 536-3555", address: "1362 E Snowflake Blvd, Snowflake, AZ 85937", website: "", notes: "Family-owned White Mountains gun shop." },
+  { name: "Sportsman's Warehouse (Show Low)", phone: "", address: "4421 S White Mountain Rd, Show Low, AZ 85901", website: "https://www.sportsmans.com", notes: "Outdoor sporting goods & firearms." },
+  { name: "B&B Gunsmithing", phone: "(928) 386-9053", address: "514 W Elm St, Winslow, AZ 86047", website: "", notes: "Gunsmith & firearms dealer." },
+  { name: "High Country Ammunition & Firearms", phone: "(602) 751-4830", address: "2700 Scenic View Dr, Winslow, AZ 86047", website: "", notes: "Ammo & firearms." },
+  { name: "Gold Pan Dan's Guns & Gold", phone: "(928) 669-3079", address: "820 S California Ave, Ste 109, Parker, AZ 85344", website: "https://goldpandansgunsandgold.com", notes: "Guns & gold on the Colorado River." },
+  { name: "AZ 2nd Amendment Outfitters", phone: "(520) 397-7737", address: "1070 E Valle Vista Dr, Nogales, AZ 85621", website: "", notes: "Firearms outfitter." },
+  { name: "Arizona Guns and Ammo", phone: "(928) 424-4570", address: "520 W 5th St, Safford, AZ 85546", website: "", notes: "Gun & ammo shop." },
+  { name: "Taking Aim Guns and Ammo", phone: "(928) 228-8822", address: "1122 W Thatcher Blvd, Safford, AZ 85546", website: "https://takingaimgunsandammo.com", notes: "Gun & ammo shop." },
+  { name: "Q's Gun & Supply", phone: "", address: "7648 S Chuckwagon, Safford, AZ 85546", website: "http://www.qgunsupply.com", notes: "Firearms & supply." }
 ];
 
 function _dealerKey(d) { return ((d.name || '') + '|' + (d.address || '')).toLowerCase().replace(/\s+/g, ' ').trim(); }
