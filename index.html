@@ -1003,11 +1003,59 @@
 <script src="js/cloud-sync.js"></script>
 <script src="js/auth.js"></script>
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW failed', e));
+  // Service worker registration + "new version available" prompt.
+  (function () {
+    if (!('serviceWorker' in navigator)) return;
+
+    function showUpdateBanner(worker) {
+      if (!worker || document.getElementById('updateBanner')) return;
+      var bar = document.createElement('div');
+      bar.id = 'updateBanner';
+      bar.className = 'update-banner';
+      var msg = document.createElement('span');
+      msg.textContent = 'A new version is available.';
+      var reload = document.createElement('button');
+      reload.type = 'button';
+      reload.className = 'update-banner-reload';
+      reload.textContent = 'Reload';
+      var dismiss = document.createElement('button');
+      dismiss.type = 'button';
+      dismiss.className = 'update-banner-x';
+      dismiss.setAttribute('aria-label', 'Dismiss');
+      dismiss.innerHTML = '&times;';
+      bar.appendChild(msg); bar.appendChild(reload); bar.appendChild(dismiss);
+      document.body.appendChild(bar);
+      reload.addEventListener('click', function () {
+        reload.textContent = 'Updating…'; reload.disabled = true;
+        updateClicked = true;
+        worker.postMessage('SKIP_WAITING');
+      });
+      dismiss.addEventListener('click', function () { bar.remove(); });
+    }
+
+    // Reload once the new worker takes control — but only when the user asked
+    // for it, so a first-install (clients.claim) never reloads unexpectedly.
+    var updateClicked = false, reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (!updateClicked || reloading) return;
+      reloading = true; window.location.reload();
     });
-  }
+
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').then(function (reg) {
+        if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner(reg.waiting);
+        reg.addEventListener('updatefound', function () {
+          var nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener('statechange', function () {
+            if (nw.state === 'installed' && navigator.serviceWorker.controller) showUpdateBanner(nw);
+          });
+        });
+        // Surface freshly-deployed updates without a manual refresh.
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) reg.update().catch(function () {}); });
+      }).catch(function (e) { console.warn('SW failed', e); });
+    });
+  })();
 </script>
 </body>
 </html>
