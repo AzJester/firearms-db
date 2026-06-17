@@ -616,6 +616,66 @@ function updateStats() {
   updateCaliberFilter();
   updateTagFilter();
   document.getElementById('backupBtn').style.display = db.backups.length > 0 ? 'inline-block' : 'none';
+  updateReminderBadge();
+}
+
+// =====================================================
+// SMART REMINDERS
+// =====================================================
+function computeReminders() {
+  const out = [];
+  const active = db.firearms.filter(f => !f.status || f.status === 'Active');
+  active.forEach(f => {
+    const name = ((f.make || '') + ' ' + (f.model || '')).trim() || 'Firearm';
+    // NFA tax stamp still pending
+    if (f.isNFA && f.dateSubmitted && !f.dateApproved && f.stampStatus !== 'Approved' && f.stampStatus !== 'Denied') {
+      const days = Math.round((Date.now() - new Date(f.dateSubmitted)) / 86400000);
+      out.push({ sev: 'med', icon: '&#128196;', itemType: 'firearm', itemId: f.id,
+        text: name + ' — tax stamp pending ' + days + ' day' + (days === 1 ? '' : 's') });
+    }
+    // Warranty expiring / expired
+    if (f.warrantyExp) {
+      const st = getWarrantyStatus(f.warrantyExp);
+      if (st === 'expired') out.push({ sev: 'high', icon: '&#9888;', itemType: 'firearm', itemId: f.id, text: name + ' — warranty expired (' + fmtDate(f.warrantyExp) + ')' });
+      else if (st === 'soon') out.push({ sev: 'med', icon: '&#9201;', itemType: 'firearm', itemId: f.id, text: name + ' — warranty expiring ' + fmtDate(f.warrantyExp) });
+    }
+  });
+  // Low ammunition
+  db.ammo.forEach(a => {
+    if (isLowStock(a)) out.push({ sev: 'high', icon: '&#127919;', itemType: 'ammo', itemId: a.id,
+      text: 'Low ammo: ' + ((a.caliber || '') + ' ' + (a.brand || '')).trim() + ' — ' + (a.quantity || 0) + ' left (alert at ' + a.lowStock + ')' });
+  });
+  const rank = { high: 0, med: 1, low: 2 };
+  out.sort((x, y) => rank[x.sev] - rank[y.sev]);
+  return out;
+}
+
+function updateReminderBadge() {
+  const badge = document.getElementById('reminderBadge');
+  if (!badge) return;
+  const n = computeReminders().length;
+  badge.textContent = n > 99 ? '99+' : n;
+  badge.style.display = n > 0 ? 'flex' : 'none';
+}
+
+function openReminders() {
+  const list = document.getElementById('remindersList');
+  const rem = computeReminders();
+  if (!rem.length) {
+    list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:0.86rem;">&#127881; All clear — no reminders right now.</div>';
+  } else {
+    list.innerHTML = rem.map(r =>
+      `<div class="reminder-item sev-${r.sev}" onclick="reminderGo('${r.itemType}','${r.itemId}')">
+        <span class="reminder-icon">${r.icon}</span><span class="reminder-text">${esc(r.text)}</span>
+        <span class="reminder-go">&#8250;</span></div>`).join('');
+  }
+  document.getElementById('remindersModal').classList.add('open');
+}
+function closeReminders() { document.getElementById('remindersModal').classList.remove('open'); }
+function reminderGo(type, id) {
+  closeReminders();
+  if (type === 'firearm') { openDetail(id); }
+  else if (type === 'ammo') { const t = document.querySelector('.tab[data-tab="ammo"]'); if (t) t.click(); }
 }
 
 function updateCaliberFilter() {
