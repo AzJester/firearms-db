@@ -1617,6 +1617,8 @@ table.data-table th { letter-spacing: 0.3px; }
 .dealer-search { flex: 1 1 200px; min-width: 0; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 0.85rem; }
 .dealer-search:focus { outline: none; border-color: var(--accent); }
 .dealer-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.dealer-sort { padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 0.8rem; font-weight: 600; cursor: pointer; margin-left: auto; }
+@media (max-width: 600px) { .dealer-sort { margin-left: 0; } }
 .dealer-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--bg2); color: var(--text2); border: 1px solid var(--border); border-radius: 16px; padding: 5px 12px; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
 .dealer-chip:hover { border-color: var(--accent); color: var(--accent); }
 .dealer-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }

@@ -1381,6 +1381,7 @@ function openAddModal() {
   document.getElementById('modalTitle').textContent = 'Add Firearm';
   document.getElementById('saveBtn').textContent = 'Save Firearm';
   clearForm();
+  populateDispDealerPicker();
   document.getElementById('formModal').classList.add('open');
 }
 
@@ -1391,7 +1392,31 @@ function openEditModal(id) {
   document.getElementById('modalTitle').textContent = 'Edit Firearm';
   document.getElementById('saveBtn').textContent = 'Update Firearm';
   populateForm(f);
+  populateDispDealerPicker();
   document.getElementById('formModal').classList.add('open');
+}
+
+// Fill the disposition "FFL Dealer" picker from saved dealers (preferred first, then A-Z).
+function populateDispDealerPicker() {
+  const sel = document.getElementById('fDispDealerPick');
+  if (!sel) return;
+  const dealers = [...(db.dealers || [])].sort((a, b) =>
+    ((b.favorite ? 1 : 0) - (a.favorite ? 1 : 0)) || (a.name || '').localeCompare(b.name || ''));
+  let opts = '<option value="">— Pick a saved dealer —</option>';
+  dealers.forEach(d => {
+    const label = (d.favorite ? '★ ' : '') + (d.name || 'Unnamed') + (d.address ? ' — ' + d.address.split(',')[0] : '');
+    opts += '<option value="' + escAttr(d.id) + '">' + esc(label) + '</option>';
+  });
+  sel.innerHTML = opts;
+  sel.value = '';
+}
+
+// Picking a dealer fills the free-text FFL Dealer field (with FFL # when known).
+function pickDispDealer() {
+  const sel = document.getElementById('fDispDealerPick');
+  const d = (db.dealers || []).find(x => x.id === sel.value);
+  if (d) document.getElementById('fDispFFL').value = d.name + (d.ffl ? ' (FFL ' + d.ffl + ')' : '');
+  sel.value = '';
 }
 
 function closeModal() {
@@ -2599,7 +2624,7 @@ async function importDealersFromText() {
 }
 
 // ---- Dealer filtering --------------------------------------------------
-let _dealerFilterQ = '', _dealerFilterArea = 'all';
+let _dealerFilterQ = '', _dealerFilterArea = 'all', _dealerSort = 'fav';
 
 // Derive a metro/area bucket from a dealer's address (and notes as a fallback).
 function dealerArea(d) {
@@ -2623,6 +2648,8 @@ function setDealerArea(area) {
   document.querySelectorAll('.dealer-chip').forEach(c => c.classList.toggle('active', c.dataset.area === area));
   applyDealerFilter();
 }
+
+function setDealerSort(v) { _dealerSort = v; renderDealersTab(); }
 
 // Filter the already-rendered cards in place (keeps search-box focus, no rebuild).
 function applyDealerFilter() {
@@ -2661,13 +2688,22 @@ function renderDealersTab() {
   let chips = chip('all', items.length);
   ['Yuma', 'Phoenix', 'Tucson', 'Northern AZ', 'Western AZ', 'Southern AZ', 'Other'].forEach(a => { if (counts[a]) chips += chip(a, counts[a]); });
 
+  const sortSel = '<select class="dealer-sort" onchange="setDealerSort(this.value)" title="Sort dealers">'
+    + [['fav', 'Preferred first'], ['name', 'Name (A–Z)'], ['region', 'Region']].map(o =>
+        '<option value="' + o[0] + '"' + (_dealerSort === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('')
+    + '</select>';
   h += '<div class="dealer-filterbar">'
     + '<input type="text" id="dealerSearch" class="dealer-search" placeholder="Search name, city, notes…" oninput="applyDealerFilter()" value="' + escAttr(_dealerFilterQ) + '">'
-    + '<div class="dealer-chips">' + chips + '</div></div>';
+    + '<div class="dealer-chips">' + chips + '</div>'
+    + sortSel + '</div>';
 
   h += '<div id="dealerGrid" style="padding:16px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px;">';
-  // Preferred dealers float to the top (stable sort keeps existing order otherwise)
-  const ordered = [...items].sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0));
+  const regionRank = { 'Yuma': 0, 'Phoenix': 1, 'Tucson': 2, 'Northern AZ': 3, 'Western AZ': 4, 'Southern AZ': 5, 'Other': 6 };
+  const byName = (a, b) => (a.name || '').localeCompare(b.name || '');
+  const ordered = [...items];
+  if (_dealerSort === 'name') ordered.sort(byName);
+  else if (_dealerSort === 'region') ordered.sort((a, b) => ((regionRank[dealerArea(a)] ?? 9) - (regionRank[dealerArea(b)] ?? 9)) || byName(a, b));
+  else ordered.sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0)); // 'fav' (default): preferred first
   ordered.forEach(d => {
     const area = dealerArea(d);
     const notesText = (d.notes || '').replace(/<[^>]*>/g, ' '); // strip rich-text tags for search
