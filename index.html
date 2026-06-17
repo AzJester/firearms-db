@@ -189,6 +189,8 @@
     <button class="btn btn-small btn-file" id="backupBtn" onclick="openBackupModal()" style="display:none;">Restore Backup</button>
     <button class="btn btn-small btn-outline" id="settingsBtn" onclick="openSettingsModal()" style="display:none;">Settings</button>
     <button class="btn btn-small btn-secondary" onclick="saveToFile()">Save to File</button>
+    <button class="btn btn-small btn-file" onclick="document.getElementById('restoreFile').click()" title="Replace your entire collection with a backup .json file">Restore from File</button>
+    <input id="restoreFile" type="file" accept="application/json,.json" style="display:none;">
     <button class="btn btn-small btn-outline" onclick="CloudSync.syncNow()">Sync Now</button>
     <button class="btn btn-small btn-outline" onclick="Auth.signOut()">Sign Out</button>
   </div>
