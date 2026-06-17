@@ -91,6 +91,67 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
 
 // =====================================================
+// NAVIGATION: dropdown menus, contextual add, bottom nav, filters
+// =====================================================
+// Dropdown menus (Tools, account gear, bottom-nav "More")
+document.addEventListener('click', (e) => {
+  const toggle = e.target.closest('[data-menu-toggle]');
+  if (toggle) {
+    const menu = toggle.closest('.menu');
+    const wasOpen = menu.classList.contains('open');
+    document.querySelectorAll('.menu.open').forEach(m => m.classList.remove('open'));
+    if (!wasOpen) menu.classList.add('open');
+    e.stopPropagation();
+    return;
+  }
+  if (e.target.closest('.menu-item')) {                 // run the item's action, then close
+    const m = e.target.closest('.menu'); if (m) m.classList.remove('open');
+    return;
+  }
+  document.querySelectorAll('.menu.open').forEach(m => m.classList.remove('open'));
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') document.querySelectorAll('.menu.open').forEach(m => m.classList.remove('open'));
+});
+
+// Bottom-nav buttons (and "More" items) reuse the existing top-tab logic
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-bottomtab]');
+  if (!b) return;
+  const tab = document.querySelector('.tab[data-tab="' + b.dataset.bottomtab + '"]');
+  if (tab) tab.click();
+});
+function updateBottomNav() {
+  document.querySelectorAll('.bn-item[data-bottomtab]').forEach(b =>
+    b.classList.toggle('active', b.dataset.bottomtab === currentTab));
+}
+function toggleFilters() {
+  const tb = document.getElementById('mainToolbar');
+  if (tb) tb.classList.toggle('show-filters');
+}
+
+// Contextual primary action ("+ Add") that follows the active tab
+let _ctxAdd = null;
+function updateContextualActions() {
+  try {
+    const map = {
+      all: ['+ Add Firearm', openAddModal], nfa: ['+ Add Firearm', openAddModal], disposed: ['+ Add Firearm', openAddModal],
+      ammo: ['+ Add Ammo', openAddAmmoModal], accessories: ['+ Add Accessory', openAccessoryModal],
+      wishlist: ['+ Add Wishlist', openWishlistModal], dealers: ['+ Add Dealer', openDealerModal]
+    };
+    const spec = map[currentTab] || null;
+    _ctxAdd = spec ? spec[1] : null;
+    const addBtn = document.getElementById('addBtn');
+    const fab = document.getElementById('bnFab');
+    if (addBtn) { addBtn.style.display = spec ? '' : 'none'; if (spec) addBtn.textContent = spec[0]; }
+    if (fab) fab.style.display = spec ? '' : 'none';
+  } catch (err) { console.warn('updateContextualActions failed', err); }
+}
+function ctxAdd() { try { if (_ctxAdd) _ctxAdd(); } catch (err) { console.warn(err); } }
+window.ctxAdd = ctxAdd;
+window.toggleFilters = toggleFilters;
+
+// =====================================================
 // INDEXEDDB IMAGE STORAGE
 // =====================================================
 function openImageDB() {
@@ -1038,6 +1099,9 @@ function render() {
   const empty = document.getElementById('emptyState');
   const dash = document.getElementById('dashboardContainer');
   const toolbar = document.getElementById('mainToolbar');
+
+  updateContextualActions();
+  updateBottomNav();
 
   // Show/hide toolbar based on tab
   // Show/hide card sort

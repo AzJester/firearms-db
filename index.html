@@ -230,6 +230,20 @@
     </div>
     <button class="bell-btn" id="reminderBell" onclick="openReminders()" title="Reminders" aria-label="Reminders">&#128276;<span class="bell-badge" id="reminderBadge" style="display:none;">0</span></button>
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode">&#9790;</button>
+    <div class="menu" id="acctMenu">
+      <button class="theme-toggle" data-menu-toggle title="Menu" aria-label="Account menu" aria-haspopup="true">&#9881;</button>
+      <div class="menu-panel menu-panel-right">
+        <button class="menu-item" onclick="CloudSync.syncNow()">&#128259; Sync now</button>
+        <button class="menu-item" onclick="manualBackup()">&#128190; Backup now</button>
+        <div class="menu-sep"></div>
+        <button class="menu-item" onclick="saveToFile()">&#11015;&#65039; Save to file</button>
+        <button class="menu-item" onclick="document.getElementById('restoreFile').click()">&#11014;&#65039; Restore from file</button>
+        <button class="menu-item" onclick="openBackupModal()">&#8617;&#65039; Restore in-app backup</button>
+        <div class="menu-sep"></div>
+        <button class="menu-item" onclick="openSettingsModal()">&#9881;&#65039; Settings</button>
+        <button class="menu-item" onclick="Auth.signOut()">&#9099; Sign out</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -310,6 +324,24 @@
     <button class="active" id="viewCards" onclick="setView('cards')">Cards</button>
     <button id="viewTable" onclick="setView('table')">Table</button>
   </div>
+  <button class="btn btn-outline filter-toggle-btn" id="filterBtn" onclick="toggleFilters()">&#9776; Filters</button>
+  <button class="btn btn-primary" id="addBtn" onclick="ctxAdd()" style="display:none;">+ Add</button>
+  <div class="menu" id="toolsMenu">
+    <button class="btn btn-secondary" data-menu-toggle aria-haspopup="true" aria-label="Tools">Tools &#9662;</button>
+    <div class="menu-panel">
+      <button class="menu-item" onclick="openReportBuilder()">&#128202; Custom Report</button>
+      <button class="menu-item" onclick="exportATFBoundBook()">&#128214; ATF Bound Book</button>
+      <button class="menu-item" onclick="openCameraModal()">&#128247; Scan Serial</button>
+      <div class="menu-sep"></div>
+      <button class="menu-item" onclick="exportExcel()">&#128203; Export Excel</button>
+      <button class="menu-item" onclick="exportJSON()">&#11015;&#65039; Export JSON</button>
+      <button class="menu-item" onclick="importJSON()">&#11014;&#65039; Import JSON</button>
+      <button class="menu-item" onclick="importCSV()">&#11014;&#65039; Import CSV</button>
+      <div class="menu-sep"></div>
+      <button class="menu-item" onclick="openShareModal()">&#128279; Share inventory</button>
+      <button class="menu-item" onclick="printInventory()">&#128424;&#65039; Print</button>
+    </div>
+  </div>
   <button class="btn btn-primary" id="addFirearmBtn" onclick="openAddModal()" style="display:none;">+ Add Firearm</button>
   <button class="btn btn-primary" id="addAmmoBtn" onclick="openAddAmmoModal()" style="display:none;">+ Add Ammo</button>
   <button class="btn btn-primary" id="addAccessoryBtn" onclick="openAccessoryModal()" style="display:none;">+ Add Accessory</button>
@@ -322,8 +354,8 @@
   <button class="btn btn-outline" onclick="exportJSON()" style="display:none;" id="jsonBtn">Export JSON</button>
   <button class="btn btn-outline" onclick="importJSON()" style="display:none;" id="importBtn">Import JSON</button>
   <button class="btn btn-outline" onclick="importCSV()" style="display:none;" id="csvBtn">Import CSV</button>
-  <button class="btn btn-outline no-print" onclick="printInventory()">Print</button>
-  <button class="btn btn-outline no-print" onclick="showShortcutsHelp()" title="Keyboard Shortcuts">?</button>
+  <button class="btn btn-outline no-print" id="printBtn" onclick="printInventory()">Print</button>
+  <button class="btn btn-outline no-print" id="shortcutsBtn" onclick="showShortcutsHelp()" title="Keyboard Shortcuts">?</button>
   <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
   <input type="file" id="csvImportFile" accept=".csv,.tsv" style="display:none" onchange="handleCSVImport(event)">
 </div>
@@ -864,6 +896,24 @@
   <span class="lightbox-close" aria-label="Close">&times;</span>
   <img id="lightboxImg" src="" alt="">
 </div>
+<!-- Mobile bottom navigation -->
+<nav class="bottom-nav" id="bottomNav">
+  <button class="bn-item" data-bottomtab="dashboard"><span class="bn-ico">&#9632;</span><span class="bn-lbl">Dash</span></button>
+  <button class="bn-item" data-bottomtab="all"><span class="bn-ico">&#128737;</span><span class="bn-lbl">Firearms</span></button>
+  <button class="bn-fab" id="bnFab" onclick="ctxAdd()" aria-label="Add">+</button>
+  <button class="bn-item" data-bottomtab="ammo"><span class="bn-ico">&#127919;</span><span class="bn-lbl">Ammo</span></button>
+  <div class="menu bn-more-menu" id="bnMoreMenu">
+    <button class="bn-item" data-menu-toggle aria-haspopup="true"><span class="bn-ico">&#9776;</span><span class="bn-lbl">More</span></button>
+    <div class="menu-panel menu-panel-up menu-panel-right">
+      <button class="menu-item" data-bottomtab="accessories">&#128230; Accessories</button>
+      <button class="menu-item" data-bottomtab="nfa">&#128196; NFA Items</button>
+      <button class="menu-item" data-bottomtab="disposed">&#128683; Disposed</button>
+      <button class="menu-item" data-bottomtab="wishlist">&#11088; Wishlist</button>
+      <button class="menu-item" data-bottomtab="dealers">&#127970; FFL Dealers</button>
+    </div>
+  </div>
+</nav>
+
 </div><!-- /#appRoot -->
 
 <!-- toast notifications -->
