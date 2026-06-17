@@ -2440,7 +2440,8 @@ async function saveDealer() {
   if (!name) { toast('Enter a dealer name.'); return; }
   let notes = document.getElementById('dNotes').innerHTML.trim();
   if (notes === '<br>') notes = ''; // contenteditable leaves a stray <br> when emptied
-  const data = { id: editingDealerId || generateId(), name, ffl: document.getElementById('dFFL').value.trim(), phone: document.getElementById('dPhone').value.trim(), email: document.getElementById('dEmail').value.trim(), address: document.getElementById('dAddress').value.trim(), website: document.getElementById('dWebsite').value.trim(), notes };
+  const existing = editingDealerId ? db.dealers.find(x => x.id === editingDealerId) : null;
+  const data = { id: editingDealerId || generateId(), name, ffl: document.getElementById('dFFL').value.trim(), phone: document.getElementById('dPhone').value.trim(), email: document.getElementById('dEmail').value.trim(), address: document.getElementById('dAddress').value.trim(), website: document.getElementById('dWebsite').value.trim(), notes, favorite: existing ? !!existing.favorite : false };
   if (editingDealerId) { const i = db.dealers.findIndex(x => x.id === editingDealerId); if (i > -1) db.dealers[i] = data; addAuditEntry('edit','dealer',name,''); }
   else { db.dealers.push(data); addAuditEntry('create','dealer',name,''); }
   await saveData(); render(); closeDealerModal();
@@ -2451,6 +2452,14 @@ function deleteDealer(id) {
   const d = db.dealers.find(x => x.id === id);
   addAuditEntry('delete','dealer',d?d.name:'Unknown','');
   db.dealers = db.dealers.filter(x => x.id !== id); saveData(); render();
+}
+
+// Toggle a dealer's "preferred" flag; favorites sort to the top of the list.
+function toggleDealerFavorite(id) {
+  const d = db.dealers.find(x => x.id === id);
+  if (!d) return;
+  d.favorite = !d.favorite;
+  saveData(); render();
 }
 
 // ---- Bulk import -------------------------------------------------------
@@ -2657,13 +2666,19 @@ function renderDealersTab() {
     + '<div class="dealer-chips">' + chips + '</div></div>';
 
   h += '<div id="dealerGrid" style="padding:16px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px;">';
-  items.forEach(d => {
+  // Preferred dealers float to the top (stable sort keeps existing order otherwise)
+  const ordered = [...items].sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0));
+  ordered.forEach(d => {
     const area = dealerArea(d);
     const notesText = (d.notes || '').replace(/<[^>]*>/g, ' '); // strip rich-text tags for search
     const text = ((d.name || '') + ' ' + (d.address || '') + ' ' + (d.phone || '') + ' ' + (d.email || '') + ' ' + notesText + ' ' + (d.ffl || '')).toLowerCase();
-    h += '<div class="ffl-card" data-area="' + area + '" data-text="' + escAttr(text) + '" style="cursor:pointer;" onclick="openDealerModal(\'' + d.id + '\')">';
+    h += '<div class="ffl-card' + (d.favorite ? ' is-fav' : '') + '" data-area="' + area + '" data-text="' + escAttr(text) + '" style="cursor:pointer;" onclick="openDealerModal(\'' + d.id + '\')">';
     h += '<span class="ffl-area-badge">' + esc(labelFor(area)) + '</span>';
-    h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><h4>' + esc(d.name) + '</h4><button class="btn btn-small btn-danger" onclick="event.stopPropagation();deleteDealer(\'' + d.id + '\')">Del</button></div>';
+    h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><h4>' + esc(d.name) + '</h4>'
+      + '<div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">'
+      + '<button class="dealer-fav' + (d.favorite ? ' active' : '') + '" title="' + (d.favorite ? 'Remove from preferred' : 'Mark as preferred') + '" onclick="event.stopPropagation();toggleDealerFavorite(\'' + d.id + '\')">' + (d.favorite ? '★' : '☆') + '</button>'
+      + '<button class="btn btn-small btn-danger" onclick="event.stopPropagation();deleteDealer(\'' + d.id + '\')">Del</button>'
+      + '</div></div>';
     if (d.ffl) h += '<div class="ffl-detail">FFL: ' + esc(d.ffl) + ' · <a href="https://fflezcheck.atf.gov/" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);">verify</a></div>';
     else h += '<div class="ffl-detail"><a href="' + esc(dealerFFLLookupUrl(d)) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);">🔎 Look up FFL #</a></div>';
     if (d.phone) h += '<div class="ffl-detail">Phone: ' + esc(d.phone) + '</div>';
