@@ -1624,3 +1624,22 @@ table.data-table th { letter-spacing: 0.3px; }
 .dealer-chip.active .dealer-chip-n { background: rgba(255,255,255,0.25); }
 .ffl-area-badge { display: inline-block; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--accent); background: var(--accent-light); border-radius: 10px; padding: 2px 8px; margin-bottom: 6px; }
 @media (max-width: 600px) { .dealer-filterbar { padding: 12px 16px; } }
+
+/* ===== "NEW VERSION AVAILABLE" UPDATE BANNER ===== */
+.update-banner {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  z-index: 4000; display: flex; align-items: center; gap: 12px;
+  background: var(--accent); color: #fff; padding: 10px 12px 10px 18px;
+  border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.28);
+  font-size: 0.88rem; font-weight: 600; max-width: calc(100% - 32px);
+}
+.update-banner-reload {
+  background: #fff; color: var(--accent); border: none; border-radius: 8px;
+  padding: 6px 14px; font-weight: 700; font-size: 0.84rem; cursor: pointer;
+}
+.update-banner-reload:disabled { opacity: 0.7; cursor: default; }
+.update-banner-x {
+  background: none; border: none; color: #fff; font-size: 1.25rem; line-height: 1;
+  cursor: pointer; padding: 0 4px; opacity: 0.85;
+}
+.update-banner-x:hover { opacity: 1; }
