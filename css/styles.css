@@ -1369,3 +1369,16 @@ table.data-table .thumb-placeholder {
 .lightbox-close { position: absolute; top: 16px; right: 22px; color: #fff; font-size: 2.2rem; line-height: 1; cursor: pointer; opacity: 0.85; }
 .lightbox-close:hover { opacity: 1; }
 .detail-img { cursor: zoom-in; }
+
+/* ===== SMART REMINDERS (v2.3) ===== */
+.bell-btn { position: relative; background: none; border: none; color: rgba(255,255,255,0.85); font-size: 1.2rem; cursor: pointer; padding: 4px 6px; border-radius: 6px; line-height: 1; transition: background 0.15s; }
+.bell-btn:hover { background: rgba(255,255,255,0.15); }
+.bell-badge { position: absolute; top: -3px; right: -3px; min-width: 17px; height: 17px; padding: 0 4px; background: var(--red); color: #fff; border-radius: 9px; font-size: 0.64rem; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px var(--accent); }
+.reminders-list { display: flex; flex-direction: column; gap: 8px; }
+.reminder-item { display: flex; align-items: center; gap: 11px; padding: 11px 13px; border: 1px solid var(--border-light); border-left: 4px solid var(--text3); border-radius: 9px; cursor: pointer; transition: background 0.12s, transform 0.08s; }
+.reminder-item:hover { background: var(--bg2); transform: translateX(2px); }
+.reminder-item.sev-high { border-left-color: var(--red); }
+.reminder-item.sev-med { border-left-color: var(--yellow); }
+.reminder-icon { font-size: 1.1rem; flex-shrink: 0; }
+.reminder-text { flex: 1; font-size: 0.86rem; color: var(--text); }
+.reminder-go { color: var(--text3); font-size: 1.3rem; }
