@@ -1361,7 +1361,7 @@ button.wishlist-priority:hover { filter: brightness(0.95); }
 /* ===== DASHBOARD KPI + CHARTS (v2.2) ===== */
 .dash-kpi-card, .dash-wide { grid-column: 1 / -1; }
 .dash-card { border-radius: 14px; }
-.dash-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+.dash-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 14px; }
 .dash-kpi { display: flex; align-items: center; gap: 12px; padding: 6px 4px; }
 .dash-kpi-icon {
   width: 44px; height: 44px; flex-shrink: 0; border-radius: 11px;
@@ -1623,10 +1623,11 @@ table.data-table th { letter-spacing: 0.3px; }
 /* Bar fallback labels truncate instead of overflowing */
 .dash-bar-row { min-width: 0; }
 .dash-bar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* KPI cells shrink gracefully; big values wrap rather than overflow */
+/* KPI cells shrink gracefully; the numeric value stays on one line so a
+   figure like "$28,946.80" never breaks mid-digit when the grid narrows. */
 .dash-kpi { min-width: 0; }
 .dash-kpi-text { min-width: 0; }
-.dash-kpi-value { overflow-wrap: anywhere; }
+.dash-kpi-value { white-space: nowrap; }
 /* Highlights + alerts text behaves */
 .dh-text { min-width: 0; }
 .dh-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
