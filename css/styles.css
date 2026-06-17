@@ -1393,3 +1393,13 @@ table.data-table .thumb-placeholder {
 .build-summary-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent); font-weight: 600; }
 .build-summary-value { font-size: 1.5rem; font-weight: 800; color: var(--accent); line-height: 1.1; }
 .build-summary-meta { font-size: 0.78rem; color: var(--text2); text-align: right; }
+
+/* ===== DOCUMENT VAULT (v2.6) ===== */
+.doc-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.doc-chip { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg3); border: 1px solid var(--border-light); border-radius: 8px; }
+.doc-chip-icon { font-size: 1rem; flex-shrink: 0; }
+.doc-chip-name { flex: 1; font-size: 0.82rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-chip-x { background: none; border: none; color: var(--text3); font-size: 1.1rem; cursor: pointer; line-height: 1; padding: 0 4px; }
+.doc-chip-x:hover { color: var(--red); }
+.doc-open { font-size: 0.76rem; font-weight: 600; color: var(--accent); text-decoration: none; padding: 3px 8px; border: 1px solid var(--border); border-radius: 6px; }
+.doc-open:hover { background: var(--bg2); }

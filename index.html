@@ -386,6 +386,14 @@
           </div>
           <input type="file" id="fReceiptInput" accept="application/pdf,image/*" style="display:none" onchange="handleReceiptUpload(event,'f')">
         </div>
+        <div class="form-group full">
+          <label>Documents (manuals, bill of sale, Form 1/4, etc.)</label>
+          <div class="img-upload-area" id="docUploadArea" onclick="document.getElementById('docInput').click()">
+            <span class="upload-text">Click to add documents — PDF or image (you can pick several)</span>
+          </div>
+          <input type="file" id="docInput" accept="application/pdf,image/*" multiple style="display:none" onchange="handleDocUpload(event)">
+          <div id="docList" class="doc-list"></div>
+        </div>
         <div class="form-group"><label>Lifetime Round Count</label><input type="number" id="fRoundCount" min="0" placeholder="0"></div>
         <div class="form-group"><label>Warranty Expiration</label><input type="date" id="fWarrantyExp"></div>
         <!-- Custom Fields -->
