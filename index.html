@@ -23,6 +23,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- zip reading for .zip backups -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<!-- charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -779,6 +781,11 @@
 </div>
 
 
+<!-- image lightbox -->
+<div id="lightbox" class="lightbox" style="display:none;" onclick="closeLightbox()">
+  <span class="lightbox-close" aria-label="Close">&times;</span>
+  <img id="lightboxImg" src="" alt="">
+</div>
 </div><!-- /#appRoot -->
 
 <!-- toast notifications -->
