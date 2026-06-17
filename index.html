@@ -273,6 +273,7 @@
 </div>
 
 <!-- Tabs -->
+<div class="sticky-top">
 <div class="tabs">
   <div class="tab" data-tab="dashboard">Dashboard</div>
   <div class="tab active" data-tab="all">All Firearms</div>
@@ -360,6 +361,43 @@
   <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
   <input type="file" id="csvImportFile" accept=".csv,.tsv" style="display:none" onchange="handleCSVImport(event)">
 </div>
+<!-- Active filter chips -->
+<div class="filter-chips" id="filterChips" style="display:none;"></div>
+</div><!-- /.sticky-top -->
+
+<!-- shared caliber suggestions -->
+<datalist id="caliberList">
+  <option value="22 LR"></option><option value="22 WMR"></option><option value="17 HMR"></option>
+  <option value="5.7x28"></option><option value="9mm"></option><option value="380 ACP"></option>
+  <option value="38 Special"></option><option value="357 Magnum"></option><option value="40 S&amp;W"></option>
+  <option value="10mm"></option><option value="45 ACP"></option><option value="44 Magnum"></option>
+  <option value="5.56 NATO"></option><option value="223 Rem"></option><option value="300 BLK"></option>
+  <option value="308 Win"></option><option value="7.62x39"></option><option value="7.62x51"></option>
+  <option value="6.5 Creedmoor"></option><option value="6.8 SPC"></option><option value="277 FURY"></option>
+  <option value="300 Win Mag"></option><option value="30-06"></option><option value="30-30"></option>
+  <option value="350 Legend"></option><option value="450 Bushmaster"></option><option value="45-70 Govt"></option>
+  <option value="243 Win"></option><option value="270 Win"></option><option value="7mm Rem Mag"></option>
+  <option value="50 BMG"></option>
+  <!-- handgun -->
+  <option value="25 ACP"></option><option value="32 ACP"></option><option value="30 Super Carry"></option>
+  <option value="357 SIG"></option><option value="44 Special"></option><option value="45 Colt"></option>
+  <option value="454 Casull"></option><option value="460 S&amp;W Magnum"></option><option value="500 S&amp;W Magnum"></option>
+  <option value="7.62x25 Tokarev"></option><option value="9x18 Makarov"></option>
+  <!-- rifle -->
+  <option value="22-250 Rem"></option><option value="204 Ruger"></option><option value="5.45x39"></option>
+  <option value="6mm ARC"></option><option value="6mm Creedmoor"></option><option value="6.5 Grendel"></option>
+  <option value="6.5 PRC"></option><option value="224 Valkyrie"></option><option value="25-06 Rem"></option>
+  <option value="260 Rem"></option><option value="280 Rem"></option><option value="7mm-08 Rem"></option>
+  <option value="7mm PRC"></option><option value="300 WSM"></option><option value="300 PRC"></option>
+  <option value="303 British"></option><option value="7.62x54R"></option><option value="8mm Mauser"></option>
+  <option value="6.5x55 Swedish"></option><option value="32 Win Special"></option><option value="300 Savage"></option>
+  <option value="338 Win Mag"></option><option value="338 Lapua Magnum"></option><option value="35 Whelen"></option>
+  <option value="375 H&amp;H Magnum"></option><option value="444 Marlin"></option><option value="458 SOCOM"></option>
+  <option value="50 Beowulf"></option>
+  <!-- shotgun -->
+  <option value="12 Gauge"></option><option value="16 Gauge"></option><option value="20 Gauge"></option>
+  <option value="28 Gauge"></option><option value="410 Bore"></option><option value="10 Gauge"></option>
+</datalist>
 
 <!-- Bulk Tag Bar -->
 <div class="bulk-bar" id="bulkBar">
@@ -386,8 +424,9 @@
 <div class="table-container" id="tableContainer" style="display:none;"></div>
 <!-- Empty State -->
 <div class="empty-state" id="emptyState" style="display:none;">
-  <div class="icon">&#10022;</div>
-  <p>No items in your database yet.</p>
+  <div class="icon">&#128737;</div>
+  <h3>Your collection is empty</h3>
+  <p>Add your first firearm to get started &mdash; photos, NFA details, receipts and more.</p>
   <button class="btn btn-primary" id="firstItemBtn" onclick="openAddModal()" style="display:none;">+ Add Your First Firearm</button>
 </div>
 
@@ -411,7 +450,7 @@
         <div class="form-group"><label>Manufacturer / Make</label><input type="text" id="fMake" placeholder="e.g. Smith & Wesson"></div>
         <div class="form-group"><label>Model</label><input type="text" id="fModel" placeholder="e.g. M&P 15"></div>
         <div class="form-group"><label>Serial Number</label><input type="text" id="fSerial" placeholder="e.g. ABC12345" oninput="checkDuplicateSerial()"><div class="serial-warning" id="serialWarning" style="display:none;"></div></div>
-        <div class="form-group"><label>Caliber / Gauge</label><input type="text" id="fCaliber" placeholder="e.g. 5.56 NATO"></div>
+        <div class="form-group"><label>Caliber / Gauge</label><input type="text" id="fCaliber" list="caliberList" placeholder="e.g. 5.56 NATO"></div>
         <div class="form-group"><label>Type</label>
           <select id="fType"><option value="Rifle">Rifle</option><option value="Pistol">Pistol</option><option value="Shotgun">Shotgun</option><option value="Revolver">Revolver</option><option value="Silencer">Silencer</option><option value="Other">Other</option></select>
         </div>
@@ -529,7 +568,7 @@
     </div>
     <div class="modal-body">
       <div class="form-grid">
-        <div class="form-group"><label>Caliber</label><input type="text" id="aCaliber" placeholder="e.g. 5.56 NATO"></div>
+        <div class="form-group"><label>Caliber</label><input type="text" id="aCaliber" list="caliberList" placeholder="e.g. 5.56 NATO"></div>
         <div class="form-group"><label>Brand / Type</label><input type="text" id="aBrand" placeholder="e.g. Federal 55gr FMJ"></div>
         <div class="form-group"><label>Quantity on Hand</label><input type="number" id="aQuantity" min="0" placeholder="0"></div>
         <div class="form-group"><label>Purchase Date</label><input type="date" id="aPurchaseDate"></div>
@@ -662,7 +701,7 @@
       <div class="form-grid">
         <div class="form-group"><label>Make / Manufacturer</label><input type="text" id="wMake" placeholder="e.g. Daniel Defense"></div>
         <div class="form-group"><label>Model</label><input type="text" id="wModel" placeholder="e.g. DDM4 V7"></div>
-        <div class="form-group"><label>Caliber</label><input type="text" id="wCaliber" placeholder="e.g. 5.56 NATO"></div>
+        <div class="form-group"><label>Caliber</label><input type="text" id="wCaliber" list="caliberList" placeholder="e.g. 5.56 NATO"></div>
         <div class="form-group"><label>Type</label>
           <select id="wType"><option value="Rifle">Rifle</option><option value="Pistol">Pistol</option><option value="Shotgun">Shotgun</option><option value="Revolver">Revolver</option><option value="Silencer">Silencer</option><option value="Other">Other</option></select>
         </div>

@@ -151,6 +151,27 @@ function ctxAdd() { try { if (_ctxAdd) _ctxAdd(); } catch (err) { console.warn(e
 window.ctxAdd = ctxAdd;
 window.toggleFilters = toggleFilters;
 
+// Active-filter chips + filter count badge (chips shown on firearm views)
+function updateFilterChips() {
+  const chipsEl = document.getElementById('filterChips');
+  const fbtn = document.getElementById('filterBtn');
+  if (!chipsEl) return;
+  const firearmView = ['all', 'nfa', 'disposed'].includes(currentTab);
+  const defs = [['searchBox', 'Search'], ['filterType', 'Type'], ['filterCaliber', 'Caliber'], ['filterTag', 'Tag'], ['filterCondition', 'Condition']];
+  const active = [];
+  defs.forEach(([id, label]) => { const el = document.getElementById(id); if (el) { const v = (el.value || '').trim(); if (v) active.push({ id, label, v }); } });
+  if (fbtn) fbtn.innerHTML = '&#9776; Filters' + (active.length ? ' <span class="fbtn-count">' + active.length + '</span>' : '');
+  if (!firearmView || !active.length) { chipsEl.style.display = 'none'; chipsEl.innerHTML = ''; return; }
+  chipsEl.style.display = 'flex';
+  chipsEl.innerHTML = active.map(a =>
+    '<span class="chip">' + esc(a.label) + ': ' + esc(a.v) + '<button onclick="clearOneFilter(\'' + a.id + '\')" aria-label="Remove">&times;</button></span>').join('') +
+    '<button class="chip-clear" onclick="clearAllFilters()">Clear all</button>';
+}
+function clearOneFilter(id) { const el = document.getElementById(id); if (el) { el.value = ''; render(); } }
+function clearAllFilters() { ['searchBox', 'filterType', 'filterCaliber', 'filterTag', 'filterCondition'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); render(); }
+window.clearOneFilter = clearOneFilter;
+window.clearAllFilters = clearAllFilters;
+
 // =====================================================
 // COMMAND PALETTE (Ctrl/Cmd + K)
 // =====================================================
@@ -1196,6 +1217,7 @@ function render() {
 
   updateContextualActions();
   updateBottomNav();
+  updateFilterChips();
 
   // Show/hide toolbar based on tab
   // Show/hide card sort
@@ -1228,7 +1250,7 @@ function render() {
     grid.style.display='none'; tc.style.display='none';
     const t = currentView==='cards'?grid:tc;
     t.style.display = currentView==='cards'?'grid':'block';
-    t.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2);">No items match your filters.</div>';
+    t.innerHTML = '<div class="empty-inline"><div class="icon">&#128269;</div><p>No items match your search or filters.</p><button class="btn btn-outline" onclick="clearAllFilters()">Clear filters</button></div>';
     return;
   }
 
