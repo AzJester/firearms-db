@@ -1343,6 +1343,7 @@ function renderTable(items) {
 
 function sortTable(key) { if(sortCol===key) sortDir=sortDir==='asc'?'desc':'asc'; else{sortCol=key;sortDir='asc';} saveSortPreference(); render(); }
 function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function escAttr(s) { return esc(s).replace(/"/g, '&quot;'); } // safe inside double-quoted attributes
 function fmtDate(d) { if(!d) return '--'; const p=d.split('-'); if(p.length!==3) return d; return p[1]+'/'+p[2]+'/'+p[0]; }
 
 // Rich text editor
@@ -2445,29 +2446,44 @@ function deleteDealer(id) {
 // ---- Bulk import -------------------------------------------------------
 // Curated Arizona starter list (public business listings). FFL license
 // numbers are intentionally blank — they must be verified per-dealer via the
-// ATF FFL eZ Check, so we never store an unverified number.
+// ATF FFL eZ Check, so we never store an unverified number. Each dealer card
+// gets a "Look up FFL #" link to find the current, authoritative number.
 const AZ_FFL_DEALERS = [
   // Yuma
-  { name: "Sprague's Sports", phone: "(928) 726-0022", address: "345 W 32nd St, Yuma, AZ 85364", website: "https://www.spragues.com", notes: "Yuma — gun store, indoor range & CCW. Verify FFL # via ATF eZ Check." },
-  { name: "Sportsman's Warehouse #181", phone: "(928) 615-3200", address: "1038 S Castle Dome Ave, Yuma, AZ 85365", website: "https://www.sportsmans.com", notes: "Yuma. Verify FFL # via ATF eZ Check." },
-  { name: "C-A-L Ranch Stores (Yuma)", phone: "(928) 343-7700", address: "529 W 32nd St, Yuma, AZ 85364", website: "https://www.calranch.com", notes: "Yuma. Verify FFL # via ATF eZ Check." },
-  { name: "Caliber Arms and Ammo", phone: "(928) 371-7019", address: "11274 S Fortuna Rd, Ste D1, Yuma, AZ 85367", website: "https://www.caliberarmsandammo.com", notes: "Yuma. Verify FFL # via ATF eZ Check." },
-  { name: "2nd Amendment Hardware", phone: "(928) 446-1916", address: "4262 E Hwy 80, Yuma, AZ 85365", website: "", notes: "Yuma. Verify FFL # via ATF eZ Check." },
-  { name: "5 Shot Firearms", phone: "(928) 941-0867", address: "11640 S Glenwood Ave, Yuma, AZ 85367", website: "", notes: "Yuma. Verify FFL # via ATF eZ Check." },
+  { name: "Sprague's Sports", phone: "(928) 726-0022", address: "345 W 32nd St, Yuma, AZ 85364", website: "https://www.spragues.com", notes: "Gun store, indoor range & CCW classes." },
+  { name: "Sportsman's Warehouse #181", phone: "(928) 615-3200", address: "1038 S Castle Dome Ave, Yuma, AZ 85365", website: "https://www.sportsmans.com", notes: "Outdoor sporting goods & firearms." },
+  { name: "C-A-L Ranch Stores (Yuma)", phone: "(928) 343-7700", address: "529 W 32nd St, Yuma, AZ 85364", website: "https://www.calranch.com", notes: "Ranch & farm retailer with firearms counter." },
+  { name: "Caliber Arms and Ammo", phone: "(928) 371-7019", address: "11274 S Fortuna Rd, Ste D1, Yuma, AZ 85367", website: "https://www.caliberarmsandammo.com", notes: "Local gun shop in the Foothills." },
+  { name: "Hiram's Guns", phone: "(928) 955-3838", address: "801 W 32nd St, Yuma, AZ 85364", website: "", notes: "Firearms & accessories." },
+  { name: "Big 5 Sporting Goods (Yuma)", phone: "(928) 726-2884", address: "505 W Catalina Dr, Yuma, AZ 85364", website: "https://www.big5sportinggoods.com", notes: "Sporting goods retailer." },
+  { name: "2nd Amendment Hardware", phone: "(928) 446-1916", address: "4262 E Hwy 80, Yuma, AZ 85365", website: "", notes: "" },
+  { name: "5 Shot Firearms", phone: "(928) 941-0867", address: "11640 S Glenwood Ave, Yuma, AZ 85367", website: "https://5shotfirearms.com", notes: "Family-owned gun store." },
+  { name: "Blue Phantom", phone: "(928) 581-5407", address: "1209 W 18th Pl, Yuma, AZ 85364", website: "", notes: "" },
+  { name: "Patcho Villa Gun Works", phone: "", address: "2405 S 27th Ave, Yuma, AZ 85364", website: "", notes: "" },
   // Phoenix metro
-  { name: "Shooter's World", phone: "(602) 266-2600", address: "3828 N 28th Ave, Phoenix, AZ 85017", website: "https://www.azshootersworld.com", notes: "Phoenix — firearms, indoor range & training. Verify FFL # via ATF eZ Check." },
-  { name: "Legendary Guns", phone: "", address: "5130 N 19th Ave, Phoenix, AZ 85015", website: "https://legendaryguns.com", notes: "Phoenix — Class III/NFA, gunsmithing, appraisals. Verify FFL # via ATF eZ Check." },
-  { name: "Tactical Armory", phone: "(602) 488-3607", address: "5602 E Calle Camelia, Phoenix, AZ 85018", website: "", notes: "Phoenix — transfers. Verify FFL # via ATF eZ Check." },
-  { name: "Scottsdale Gun Club", phone: "", address: "14860 N Northsight Blvd, Scottsdale, AZ 85260", website: "https://scottsdalegunclub.com", notes: "Scottsdale — retail & indoor range. Verify FFL # via ATF eZ Check." },
-  { name: "Caswells Shooting Range", phone: "(480) 497-5141", address: "856 E Isabella Ave, Mesa, AZ 85204", website: "https://shop.caswells.com", notes: "Mesa — retail, range & training. Verify FFL # via ATF eZ Check." },
-  { name: "C2 Tactical", phone: "", address: "Scottsdale & Tempe, AZ", website: "https://c2tactical.com", notes: "Scottsdale/Tempe — range & retail. Verify FFL # via ATF eZ Check." },
+  { name: "Shooter's World", phone: "(602) 266-2600", address: "3828 N 28th Ave, Phoenix, AZ 85017", website: "https://www.azshootersworld.com", notes: "Firearms, indoor range & training." },
+  { name: "Shooter's World (Peoria)", phone: "(623) 776-7200", address: "8966 W Cactus Rd, Peoria, AZ 85381", website: "https://www.azshootersworld.com", notes: "West-valley range & gun store." },
+  { name: "Legendary Guns", phone: "", address: "5130 N 19th Ave, Phoenix, AZ 85015", website: "https://legendaryguns.com", notes: "Class III/NFA, gunsmithing, appraisals." },
+  { name: "Tactical Armory", phone: "(602) 488-3607", address: "5602 E Calle Camelia, Phoenix, AZ 85018", website: "", notes: "Firearms & transfers." },
+  { name: "Tombstone Tactical", phone: "(800) 606-0370", address: "10005 N Metro Pkwy E, Phoenix, AZ 85051", website: "https://tombstonetactical.com", notes: "Firearms retailer & online sales." },
+  { name: "Scottsdale Gun Club", phone: "", address: "14860 N Northsight Blvd, Scottsdale, AZ 85260", website: "https://scottsdalegunclub.com", notes: "Retail & members indoor range." },
+  { name: "Caswells Shooting Range", phone: "(480) 497-5141", address: "856 E Isabella Ave, Mesa, AZ 85204", website: "https://shop.caswells.com", notes: "Retail, range & training." },
+  { name: "Arizona Firearms (Tempe)", phone: "(480) 968-7481", address: "1315 W University Dr, Tempe, AZ 85281", website: "https://www.arizona-firearms.com", notes: "Long-running East Valley gun shop." },
+  { name: "Arizona Firearms (Chandler)", phone: "(480) 718-5132", address: "1965 S Alma School Rd, Unit 5, Chandler, AZ 85286", website: "https://www.arizona-firearms.com", notes: "East Valley gun shop." },
+  { name: "AZ Guns", phone: "(480) 745-2588", address: "961 W Ray Rd, Ste 8, Chandler, AZ 85225", website: "https://azguns.com", notes: "Low FFL transfer fees, veteran discounts." },
+  { name: "C2 Tactical", phone: "", address: "10000 N 90th St, Scottsdale, AZ 85258", website: "https://c2tactical.com", notes: "Range & retail (Scottsdale & Tempe)." },
   // Tucson
-  { name: "Murphy's Guns & Gunsmithing", phone: "(520) 881-7074", address: "3235 N Country Club Rd, Tucson, AZ 85716", website: "https://www.murphysgunshop.com", notes: "Tucson — gun shop & gunsmithing. Verify FFL # via ATF eZ Check." },
-  { name: "Diamondback Shooting Sports & Police Supply", phone: "", address: "7030 E Broadway Blvd, Tucson, AZ 85710", website: "https://dbackshootingsports.com", notes: "Tucson — retail & police supply. Verify FFL # via ATF eZ Check." },
-  { name: "Bass Pro Shops (Tucson)", phone: "", address: "1500 E Tucson Marketplace Blvd, Tucson, AZ 85713", website: "https://www.basspro.com", notes: "Tucson. Verify FFL # via ATF eZ Check." },
-  { name: "520 Tactical", phone: "", address: "5051 E 29th St, Tucson, AZ 85711", website: "", notes: "Tucson. Verify FFL # via ATF eZ Check." },
-  { name: "C-A-L Ranch Stores (Tucson)", phone: "", address: "6363 E 22nd St, Tucson, AZ 85710", website: "https://www.calranch.com", notes: "Tucson. Verify FFL # via ATF eZ Check." },
-  { name: "AZ Arms and Antiques", phone: "(520) 471-3244", address: "3033 W Gymkhana Way, Tucson, AZ 85742", website: "", notes: "Tucson. Verify FFL # via ATF eZ Check." }
+  { name: "Murphy's Guns & Gunsmithing", phone: "(520) 881-7074", address: "3235 N Country Club Rd, Tucson, AZ 85716", website: "https://www.murphysgunshop.com", notes: "Gun shop & gunsmithing." },
+  { name: "Diamondback Shooting Sports & Police Supply", phone: "", address: "7030 E Broadway Blvd, Tucson, AZ 85710", website: "https://dbackshootingsports.com", notes: "Retail, range & police supply." },
+  { name: "The Hub Tucson", phone: "(520) 274-7908", address: "1400 S Alvernon Way, Tucson, AZ 85711", website: "https://www.thehubaz.com", notes: "Gun store, indoor range & CCW training." },
+  { name: "Bass Pro Shops (Tucson)", phone: "", address: "1500 E Tucson Marketplace Blvd, Tucson, AZ 85713", website: "https://www.basspro.com", notes: "Outdoor retailer with firearms." },
+  { name: "SNG Tactical", phone: "", address: "3441 S Palo Verde Rd, Tucson, AZ 85713", website: "https://www.sngtactical.com", notes: "Firearms & tactical gear." },
+  { name: "James410 LLC", phone: "(520) 345-7526", address: "8963 E Tanque Verde Rd, Ste 195, Tucson, AZ 85749", website: "https://james410llc.com", notes: "Firearms sales & transfers." },
+  { name: "The Armament Shop", phone: "", address: "8251 E Sabino Dr, Tucson, AZ 85750", website: "", notes: "" },
+  { name: "Specialized Firearms Supply", phone: "", address: "7880 E Wild Mustang Pl, Tucson, AZ 85750", website: "", notes: "" },
+  { name: "520 Tactical", phone: "", address: "5051 E 29th St, Tucson, AZ 85711", website: "", notes: "" },
+  { name: "C-A-L Ranch Stores (Tucson)", phone: "", address: "6363 E 22nd St, Tucson, AZ 85710", website: "https://www.calranch.com", notes: "Ranch & farm retailer with firearms counter." },
+  { name: "AZ Arms and Antiques", phone: "(520) 471-3244", address: "3033 W Gymkhana Way, Tucson, AZ 85742", website: "", notes: "Firearms & antiques." }
 ];
 
 function _dealerKey(d) { return ((d.name || '') + '|' + (d.address || '')).toLowerCase().replace(/\s+/g, ' ').trim(); }
@@ -2528,30 +2544,90 @@ async function importDealersFromText() {
   toast(r.added + ' imported' + (r.skipped ? ', ' + r.skipped + ' skipped (duplicate/blank)' : '') + '.');
 }
 
+// ---- Dealer filtering --------------------------------------------------
+let _dealerFilterQ = '', _dealerFilterArea = 'all';
+
+// Derive a metro/area bucket from a dealer's address (and notes as a fallback).
+function dealerArea(d) {
+  const a = ((d.address || '') + ' ' + (d.notes || '')).toLowerCase();
+  if (a.indexOf('yuma') > -1) return 'Yuma';
+  if (/(phoenix|scottsdale|mesa|tempe|glendale|peoria|chandler|gilbert|surprise|avondale|goodyear|queen creek|fountain hills|cave creek|paradise valley|sun city)/.test(a)) return 'Phoenix';
+  if (a.indexOf('tucson') > -1 || a.indexOf('marana') > -1 || a.indexOf('oro valley') > -1 || a.indexOf('vail') > -1 || a.indexOf('sahuarita') > -1) return 'Tucson';
+  return 'Other';
+}
+
+// Google search that surfaces the dealer's current ATF FFL license number.
+function dealerFFLLookupUrl(d) {
+  return 'https://www.google.com/search?q=' + encodeURIComponent(((d.name || '') + ' ' + (d.address || '')).trim() + ' FFL license number');
+}
+
+function setDealerArea(area) {
+  _dealerFilterArea = area;
+  document.querySelectorAll('.dealer-chip').forEach(c => c.classList.toggle('active', c.dataset.area === area));
+  applyDealerFilter();
+}
+
+// Filter the already-rendered cards in place (keeps search-box focus, no rebuild).
+function applyDealerFilter() {
+  const input = document.getElementById('dealerSearch');
+  if (input) _dealerFilterQ = input.value.trim().toLowerCase();
+  let shown = 0;
+  document.querySelectorAll('#dealerGrid .ffl-card').forEach(card => {
+    const okArea = _dealerFilterArea === 'all' || card.dataset.area === _dealerFilterArea;
+    const okText = !_dealerFilterQ || (card.dataset.text || '').indexOf(_dealerFilterQ) > -1;
+    const show = okArea && okText;
+    card.style.display = show ? '' : 'none';
+    if (show) shown++;
+  });
+  const noMatch = document.getElementById('dealerNoMatch');
+  if (noMatch) noMatch.style.display = shown ? 'none' : 'block';
+  const cnt = document.getElementById('dealerShownCount');
+  if (cnt) cnt.textContent = shown;
+}
+
 function renderDealersTab() {
   document.getElementById('cardGrid').style.display = 'none';
   document.getElementById('tableContainer').style.display = 'block';
   document.getElementById('emptyState').style.display = 'none';
   const items = db.dealers || [];
   let h = '<div style="padding:16px 24px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">'
-    + '<span style="font-size:0.86rem;font-weight:600;">FFL Dealers: <span style="color:var(--accent);">' + items.length + '</span></span>'
+    + '<span style="font-size:0.86rem;font-weight:600;">FFL Dealers: <span style="color:var(--accent);" id="dealerShownCount">' + items.length + '</span></span>'
     + '<button class="btn btn-small btn-secondary" onclick="openDealerImportModal()">⬇️ Import dealers</button>'
     + '</div>';
   if (items.length === 0) { h += '<div style="text-align:center;padding:40px;color:var(--text2);">No dealers saved yet.<div style="margin-top:16px;"><button class="btn btn-primary" onclick="openDealerImportModal()">⬇️ Import dealers</button></div></div>'; document.getElementById('tableContainer').innerHTML = h; return; }
-  h += '<div style="padding:16px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">';
+
+  // Area counts for the filter chips
+  const counts = {}; items.forEach(d => { const a = dealerArea(d); counts[a] = (counts[a] || 0) + 1; });
+  if (_dealerFilterArea !== 'all' && !counts[_dealerFilterArea]) _dealerFilterArea = 'all';
+  const labelFor = a => a === 'Phoenix' ? 'Phoenix Metro' : a === 'all' ? 'All' : a;
+  const chip = (area, n) => '<button class="dealer-chip' + (_dealerFilterArea === area ? ' active' : '') + '" data-area="' + area + '" onclick="setDealerArea(\'' + area + '\')">' + labelFor(area) + ' <span class="dealer-chip-n">' + n + '</span></button>';
+  let chips = chip('all', items.length);
+  ['Yuma', 'Phoenix', 'Tucson', 'Other'].forEach(a => { if (counts[a]) chips += chip(a, counts[a]); });
+
+  h += '<div class="dealer-filterbar">'
+    + '<input type="text" id="dealerSearch" class="dealer-search" placeholder="Search name, city, notes…" oninput="applyDealerFilter()" value="' + escAttr(_dealerFilterQ) + '">'
+    + '<div class="dealer-chips">' + chips + '</div></div>';
+
+  h += '<div id="dealerGrid" style="padding:16px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px;">';
   items.forEach(d => {
-    h += '<div class="ffl-card" style="cursor:pointer;" onclick="openDealerModal(\''+d.id+'\')">';
-    h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;"><h4>'+esc(d.name)+'</h4><button class="btn btn-small btn-danger" onclick="event.stopPropagation();deleteDealer(\''+d.id+'\')">Del</button></div>';
-    if (d.ffl) h += '<div class="ffl-detail">FFL: '+esc(d.ffl)+'</div>';
-    if (d.phone) h += '<div class="ffl-detail">Phone: '+esc(d.phone)+'</div>';
-    if (d.email) h += '<div class="ffl-detail">Email: '+esc(d.email)+'</div>';
-    if (d.address) h += '<div class="ffl-detail">'+esc(d.address)+'</div>';
-    if (d.website) h += '<div class="ffl-detail"><a href="'+esc(d.website)+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);">Website</a></div>';
-    if (d.notes) h += '<div class="ffl-detail" style="margin-top:6px;font-style:italic;">'+esc(d.notes)+'</div>';
+    const area = dealerArea(d);
+    const text = ((d.name || '') + ' ' + (d.address || '') + ' ' + (d.phone || '') + ' ' + (d.email || '') + ' ' + (d.notes || '') + ' ' + (d.ffl || '')).toLowerCase();
+    h += '<div class="ffl-card" data-area="' + area + '" data-text="' + escAttr(text) + '" style="cursor:pointer;" onclick="openDealerModal(\'' + d.id + '\')">';
+    h += '<span class="ffl-area-badge">' + esc(labelFor(area)) + '</span>';
+    h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><h4>' + esc(d.name) + '</h4><button class="btn btn-small btn-danger" onclick="event.stopPropagation();deleteDealer(\'' + d.id + '\')">Del</button></div>';
+    if (d.ffl) h += '<div class="ffl-detail">FFL: ' + esc(d.ffl) + ' · <a href="https://fflezcheck.atf.gov/" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);">verify</a></div>';
+    else h += '<div class="ffl-detail"><a href="' + esc(dealerFFLLookupUrl(d)) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);">🔎 Look up FFL #</a></div>';
+    if (d.phone) h += '<div class="ffl-detail">Phone: ' + esc(d.phone) + '</div>';
+    if (d.email) h += '<div class="ffl-detail">Email: ' + esc(d.email) + '</div>';
+    if (d.address) h += '<div class="ffl-detail">' + esc(d.address) + '</div>';
+    if (d.website) h += '<div class="ffl-detail"><a href="' + esc(d.website) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);">Website</a></div>';
+    if (d.notes) h += '<div class="ffl-detail" style="margin-top:6px;font-style:italic;">' + esc(d.notes) + '</div>';
     h += '</div>';
   });
   h += '</div>';
+  h += '<div id="dealerNoMatch" style="display:none;text-align:center;padding:30px;color:var(--text2);">No dealers match your filter.</div>';
   document.getElementById('tableContainer').innerHTML = h;
+  applyDealerFilter();
 }
 
 // =====================================================

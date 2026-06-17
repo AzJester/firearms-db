@@ -1611,3 +1611,16 @@ table.data-table th { letter-spacing: 0.3px; }
   .dashboard { padding: 16px; gap: 12px; }
   .dash-card { padding: 16px; }
 }
+
+/* ===== FFL DEALER FILTER BAR ===== */
+.dealer-filterbar { padding: 12px 24px; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.dealer-search { flex: 1 1 200px; min-width: 0; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 0.85rem; }
+.dealer-search:focus { outline: none; border-color: var(--accent); }
+.dealer-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.dealer-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--bg2); color: var(--text2); border: 1px solid var(--border); border-radius: 16px; padding: 5px 12px; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+.dealer-chip:hover { border-color: var(--accent); color: var(--accent); }
+.dealer-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.dealer-chip-n { background: rgba(0,0,0,0.12); border-radius: 10px; padding: 0 6px; font-size: 0.72rem; }
+.dealer-chip.active .dealer-chip-n { background: rgba(255,255,255,0.25); }
+.ffl-area-badge { display: inline-block; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--accent); background: var(--accent-light); border-radius: 10px; padding: 2px 8px; margin-bottom: 6px; }
+@media (max-width: 600px) { .dealer-filterbar { padding: 12px 16px; } }
