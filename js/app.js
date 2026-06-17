@@ -1344,6 +1344,10 @@ function renderTable(items) {
 function sortTable(key) { if(sortCol===key) sortDir=sortDir==='asc'?'desc':'asc'; else{sortCol=key;sortDir='asc';} saveSortPreference(); render(); }
 function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 function escAttr(s) { return esc(s).replace(/"/g, '&quot;'); } // safe inside double-quoted attributes
+// Read a rich-text (.rte-content) editor's HTML, treating an empty editor as ''.
+function rteValue(id) { const v = (document.getElementById(id).innerHTML || '').trim(); return v === '<br>' ? '' : v; }
+// Render stored rich-text for display (skips the empty-<br> sentinel).
+function rteShow(html) { return (html && html !== '<br>') ? html : ''; }
 function fmtDate(d) { if(!d) return '--'; const p=d.split('-'); if(p.length!==3) return d; return p[1]+'/'+p[2]+'/'+p[0]; }
 
 // Rich text editor
@@ -1397,8 +1401,9 @@ function closeModal() {
 }
 
 function clearForm() {
-  ['fMake','fModel','fSerial','fCaliber','fBarrel','fDateAcquired','fPrice','fDateSubmitted','fDateApproved','fDispDate','fDispBuyer','fDispPrice','fDispFFL','fDispNotes'].forEach(id => document.getElementById(id).value='');
+  ['fMake','fModel','fSerial','fCaliber','fBarrel','fDateAcquired','fPrice','fDateSubmitted','fDateApproved','fDispDate','fDispBuyer','fDispPrice','fDispFFL'].forEach(id => document.getElementById(id).value='');
   document.getElementById('fNotes').innerHTML='';
+  document.getElementById('fDispNotes').innerHTML='';
   document.getElementById('fType').value='Rifle';
   document.getElementById('fCondition').value='New';
   document.getElementById('fStatus').value='Active';
@@ -1456,7 +1461,7 @@ function populateForm(f) {
     document.getElementById('fDispBuyer').value=f.dispBuyer||'';
     document.getElementById('fDispPrice').value=f.dispPrice||'';
     document.getElementById('fDispFFL').value=f.dispFFL||'';
-    document.getElementById('fDispNotes').value=f.dispNotes||'';
+    document.getElementById('fDispNotes').innerHTML=f.dispNotes||'';
   }
   toggleDispositionFields();
 
@@ -1527,7 +1532,7 @@ async function saveFirearm() {
     dispBuyer: status !== 'Active' ? document.getElementById('fDispBuyer').value.trim() : null,
     dispPrice: status !== 'Active' ? document.getElementById('fDispPrice').value : null,
     dispFFL: status !== 'Active' ? document.getElementById('fDispFFL').value.trim() : null,
-    dispNotes: status !== 'Active' ? document.getElementById('fDispNotes').value.trim() : null,
+    dispNotes: status !== 'Active' ? rteValue('fDispNotes') : null,
     maintenanceLog: editingId ? (oldData?.maintenanceLog || []) : [],
     receipt: tempReceipts.f,
     receiptName: tempReceipts.fName,
@@ -1895,7 +1900,7 @@ function openMaintenanceModal(firearmId) {
   document.getElementById('mType').value = 'Cleaning';
   document.getElementById('mRoundCount').value = '';
   document.getElementById('mParts').value = '';
-  document.getElementById('mDescription').value = '';
+  document.getElementById('mDescription').innerHTML = '';
   document.getElementById('maintenanceModal').classList.add('open');
 }
 
@@ -1911,7 +1916,7 @@ async function saveMaintenanceEntry() {
     type: document.getElementById('mType').value,
     roundCount: document.getElementById('mRoundCount').value,
     parts: document.getElementById('mParts').value.trim(),
-    description: document.getElementById('mDescription').value.trim()
+    description: rteValue('mDescription')
   };
   firearm.maintenanceLog.push(entry);
   addAuditEntry('create', 'maintenance', (firearm.make||'')+' '+(firearm.model||''), entry.type);
@@ -2020,7 +2025,7 @@ function openDetail(id) {
       maintenanceH += `<div style="padding: 10px; background: var(--bg3); border-radius: 6px; border-left: 3px solid var(--green); margin-bottom: 8px;">
         <div style="font-weight: 600; margin-bottom: 4px;">${esc(entry.type)} - ${fmtDate(entry.date)}</div>
         <div style="font-size: 0.8rem; color: var(--text2); margin-bottom: 4px;">${entry.roundCount ? 'Round Count: '+entry.roundCount : ''}${entry.parts ? ' &bull; Parts: '+esc(entry.parts) : ''}</div>
-        ${entry.description ? `<div style="font-size: 0.8rem; color: var(--text);">${esc(entry.description)}</div>` : ''}
+        ${rteShow(entry.description) ? `<div class="rte-display" style="font-size: 0.8rem; color: var(--text);">${entry.description}</div>` : ''}
       </div>`;
     });
     maintenanceH += `<button class="btn btn-small btn-primary" onclick="openMaintenanceModal('${f.id}'); closeDetail();" style="margin-top: 8px;">+ Add Entry</button></div>`;
@@ -2036,7 +2041,7 @@ function openDetail(id) {
       ${f.dispBuyer ? `<div class="detail-field"><label>Buyer</label><span>${esc(f.dispBuyer)}</span></div>` : ''}
       ${f.dispPrice ? `<div class="detail-field"><label>Sale Price</label><span>$${parseFloat(f.dispPrice).toLocaleString()}</span></div>` : ''}
       ${f.dispFFL ? `<div class="detail-field"><label>FFL Dealer</label><span>${esc(f.dispFFL)}</span></div>` : ''}
-      ${f.dispNotes ? `<div class="detail-field" style="grid-column: 1/-1;"><label>Notes</label><span>${esc(f.dispNotes)}</span></div>` : ''}
+      ${rteShow(f.dispNotes) ? `<div class="detail-field" style="grid-column: 1/-1;"><label>Notes</label><span class="rte-display">${f.dispNotes}</span></div>` : ''}
       ${(()=>{ const pl = getProfitLoss(f); return pl !== null ? '<div class="detail-field"><label>Profit/Loss</label><span class="'+(pl>=0?'profit':'loss')+'">$'+Math.abs(pl).toLocaleString()+' '+(pl>=0?'Gain':'Loss')+'</span></div>' : ''; })()}
     </div></div>`;
   }
@@ -2326,9 +2331,10 @@ function openWishlistModal(editId) {
     document.getElementById('wPriority').value = w.priority || 'medium';
     document.getElementById('wDealer').value = w.dealer || '';
     document.getElementById('wURL').value = w.url || '';
-    document.getElementById('wNotes').value = w.notes || '';
+    document.getElementById('wNotes').innerHTML = w.notes || '';
   } else {
-    ['wMake','wModel','wCaliber','wPrice','wDealer','wURL','wNotes'].forEach(id => document.getElementById(id).value = '');
+    ['wMake','wModel','wCaliber','wPrice','wDealer','wURL'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('wNotes').innerHTML = '';
     document.getElementById('wType').value = 'Rifle';
     document.getElementById('wPriority').value = 'medium';
   }
@@ -2349,7 +2355,7 @@ async function saveWishlistItem() {
     priority: document.getElementById('wPriority').value,
     dealer: document.getElementById('wDealer').value.trim(),
     url: document.getElementById('wURL').value.trim(),
-    notes: document.getElementById('wNotes').value.trim(),
+    notes: rteValue('wNotes'),
     dateAdded: editingWishlistId ? (db.wishlist.find(x=>x.id===editingWishlistId)?.dateAdded || new Date().toISOString().slice(0,10)) : new Date().toISOString().slice(0,10)
   };
   if (editingWishlistId) { const i = db.wishlist.findIndex(x => x.id === editingWishlistId); if (i > -1) db.wishlist[i] = data; addAuditEntry('edit','wishlist',make+' '+model,''); }
@@ -2396,6 +2402,7 @@ function renderWishlistTab() {
     h += '<td>'+(w.url?'<a href="'+esc(w.url)+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);">'+esc(w.dealer||'Link')+'</a>':esc(w.dealer||'--'))+'</td>';
     h += '<td>'+fmtDate(w.dateAdded)+'</td>';
     h += '<td style="text-align:right;white-space:nowrap;"><button class="btn btn-small btn-primary" onclick="event.stopPropagation();moveWishlistToCollection(\''+w.id+'\')">Buy</button> <button class="btn btn-small btn-danger" onclick="event.stopPropagation();deleteWishlistItem(\''+w.id+'\')">Del</button></td></tr>';
+    if (rteShow(w.notes)) h += '<tr class="wishlist-note-row" style="cursor:pointer;" onclick="openWishlistModal(\''+w.id+'\')"><td colspan="9"><div class="rte-display wishlist-note">' + w.notes + '</div></td></tr>';
   });
   h += '</tbody></table>';
   document.getElementById('tableContainer').innerHTML = h;
