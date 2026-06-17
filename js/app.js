@@ -398,8 +398,8 @@ function renderAuditTrail() {
   }).join('');
 }
 
-function clearAuditTrail() {
-  if (!confirm('Clear all activity log entries?')) return;
+async function clearAuditTrail() {
+  if (!await confirmDialog('Clear all activity log entries?', { title: 'Clear activity log', okText: 'Clear', danger: true })) return;
   db.auditTrail = [];
   saveData();
   renderAuditTrail();
@@ -719,7 +719,7 @@ async function setEncryption() {
 }
 
 async function removeEncryption() {
-  if (!confirm('Remove encryption? Your password will no longer be required.')) return;
+  if (!await confirmDialog('Remove encryption? Your password will no longer be required.', { title: 'Remove encryption', okText: 'Remove', danger: true })) return;
   db.encrypted = false;
   currentPassword = null;
   await saveData();
@@ -768,7 +768,7 @@ function openBackupModal() {
 function closeBackupModal() { document.getElementById('backupModal').classList.remove('open'); }
 
 async function selectBackup(index) {
-  if (!confirm('Restore this backup? Current data will be replaced.')) return;
+  if (!await confirmDialog('Restore this backup? Current data will be replaced.', { title: 'Restore backup', okText: 'Restore', danger: true })) return;
   const backup = db.backups[index];
   db.firearms = JSON.parse(JSON.stringify(backup.firearms));
   db.ammo = JSON.parse(JSON.stringify(backup.ammo));
@@ -954,7 +954,7 @@ async function renderSharesList() {
 }
 
 async function revokeShare(token) {
-  if (!confirm('Revoke this share link? Anyone using it will immediately lose access.')) return;
+  if (!await confirmDialog('Revoke this share link? Anyone using it will immediately lose access.', { title: 'Revoke share link', okText: 'Revoke', danger: true })) return;
   const { error } = await window.sbClient.from('shares').delete().eq('token', token).eq('owner', CloudSync.uid);
   if (error) { toast('Could not revoke: ' + error.message, 'error'); return; }
   toast('Share link revoked.', 'success');
@@ -1355,9 +1355,52 @@ function tabEmpty(icon, title, sub, actionHtml) {
 }
 function fmtDate(d) { if(!d) return '--'; const p=d.split('-'); if(p.length!==3) return d; return p[1]+'/'+p[2]+'/'+p[0]; }
 
+// ---- Styled in-app dialogs (replace native confirm()/prompt()) ----------
+// Returns a Promise: confirmDialog -> boolean; promptDialog -> string|null.
+function _appDialog(o) {
+  return new Promise((resolve) => {
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay app-dialog open';
+    const okClass = o.danger ? 'btn-danger' : 'btn-primary';
+    ov.innerHTML = '<div class="modal" style="max-width:430px;">'
+      + '<div class="modal-header"><h2>' + esc(o.title || 'Please confirm') + '</h2></div>'
+      + '<div class="modal-body"><p style="margin:0;line-height:1.5;color:var(--text);">' + esc(o.message || '') + '</p>'
+      + (o.input ? '<input type="text" id="_dlgInput" class="dlg-input" value="' + escAttr(o.def || '') + '">' : '')
+      + '</div><div class="modal-footer">'
+      + (o.cancel === false ? '' : '<button class="btn btn-outline" data-dlg="cancel">' + esc(o.cancelText || 'Cancel') + '</button>')
+      + '<button class="btn ' + okClass + '" data-dlg="ok">' + esc(o.okText || 'OK') + '</button>'
+      + '</div></div>';
+    document.body.appendChild(ov);
+    const input = ov.querySelector('#_dlgInput');
+    const fail = o.input ? null : false;
+    const finish = (val) => { document.removeEventListener('keydown', onKey, true); ov.remove(); resolve(val); };
+    const ok = () => finish(o.input ? (input ? input.value.trim() : '') : true);
+    ov.querySelector('[data-dlg="ok"]').addEventListener('click', ok);
+    const cancelBtn = ov.querySelector('[data-dlg="cancel"]');
+    if (cancelBtn) cancelBtn.addEventListener('click', () => finish(fail));
+    ov.addEventListener('click', (e) => { if (e.target === ov) finish(fail); });
+    function onKey(e) {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(fail); }
+      else if (e.key === 'Enter' && (!o.input || document.activeElement === input)) { e.preventDefault(); e.stopPropagation(); ok(); }
+    }
+    document.addEventListener('keydown', onKey, true);
+    setTimeout(() => { (input || ov.querySelector('[data-dlg="ok"]')).focus(); if (input) input.select(); }, 20);
+  });
+}
+function confirmDialog(message, opts) { opts = opts || {}; return _appDialog({ message, title: opts.title || 'Please confirm', okText: opts.okText || 'Confirm', cancelText: opts.cancelText, danger: opts.danger }); }
+function promptDialog(message, def, opts) { opts = opts || {}; return _appDialog({ message, def: def || '', input: true, title: opts.title || '', okText: opts.okText || 'OK' }); }
+
 // Rich text editor
 function rteCmd(cmd, val) { document.execCommand(cmd, false, val||null); }
-function rteLink() { const url = prompt('Enter URL:'); if (url) document.execCommand('createLink', false, url); }
+async function rteLink() {
+  // Save the editor selection — focusing the dialog input would otherwise lose it.
+  const sel = window.getSelection();
+  const range = (sel && sel.rangeCount) ? sel.getRangeAt(0).cloneRange() : null;
+  const url = await promptDialog('Enter the URL to link to:', 'https://', { title: 'Insert link', okText: 'Insert' });
+  if (!url) return;
+  if (range && sel) { sel.removeAllRanges(); sel.addRange(range); }
+  document.execCommand('createLink', false, url);
+}
 
 // =====================================================
 // TABS
@@ -1784,7 +1827,7 @@ async function saveAmmo() {
 }
 
 async function quickAmmoAdjust(id, direction) {
-  const amt = prompt(direction > 0 ? 'How many rounds to add?' : 'How many rounds to subtract?', '20');
+  const amt = await promptDialog(direction > 0 ? 'How many rounds to add?' : 'How many rounds to subtract?', '20', { title: direction > 0 ? 'Add rounds' : 'Subtract rounds' });
   if (!amt || isNaN(parseInt(amt))) return;
   const a = db.ammo.find(x => x.id === id);
   if (!a) return;
@@ -1794,8 +1837,8 @@ async function quickAmmoAdjust(id, direction) {
   await saveData(); render();
 }
 
-function deleteAmmo(id) {
-  if (!confirm('Delete this ammunition entry?')) return;
+async function deleteAmmo(id) {
+  if (!await confirmDialog('Delete this ammunition entry?', { title: 'Delete ammunition', okText: 'Delete', danger: true })) return;
   deleteWithUndo('ammo', id);
 }
 
@@ -1872,8 +1915,8 @@ async function saveAccessory() {
   await saveData(); render(); closeAccessoryModal();
 }
 
-function deleteAccessory(id) {
-  if (!confirm('Delete this accessory?')) return;
+async function deleteAccessory(id) {
+  if (!await confirmDialog('Delete this accessory?', { title: 'Delete accessory', okText: 'Delete', danger: true })) return;
   deleteWithUndo('accessory', id);
 }
 
@@ -2125,8 +2168,8 @@ function openDetail(id) {
   document.getElementById('detailQRBtn').onclick=()=>{generateQR(id);};
   document.getElementById('detailDupeBtn').onclick=()=>{closeDetail();duplicateFirearm(id);};
   document.getElementById('detailEditBtn').onclick=()=>{closeDetail();openEditModal(id);};
-  document.getElementById('detailDeleteBtn').onclick=()=>{
-    if(confirm(`Delete ${f.make} ${f.model}?`)){
+  document.getElementById('detailDeleteBtn').onclick=async()=>{
+    if(await confirmDialog(`Delete ${f.make} ${f.model}?`, { title: 'Delete firearm', okText: 'Delete', danger: true })){
       closeDetail();
       deleteWithUndo('firearm', id);
     }
@@ -2258,7 +2301,7 @@ function handleImport(event){
       if(Array.isArray(data)) toImport = data;
       else if(data.firearms && Array.isArray(data.firearms)) toImport = data.firearms;
       if(toImport.length === 0) throw new Error('No firearms found');
-      if(confirm(`Import ${toImport.length} firearm(s)? This will ADD to your existing database.`)){
+      if(await confirmDialog(`Import ${toImport.length} firearm(s)? This will ADD to your existing database.`, { title: 'Import firearms', okText: 'Import' })){
         toImport.forEach(item=>{if(!item.id)item.id=generateId();if(!item.tags)item.tags=[];db.firearms.push(item);});
         addAuditEntry('create', 'import', toImport.length + ' firearms', 'Bulk import');
         await saveData();render();toast(`Imported ${toImport.length} firearm(s) successfully.`);
@@ -2403,18 +2446,18 @@ async function saveWishlistItem() {
   await saveData(); render(); closeWishlistModal();
 }
 
-function deleteWishlistItem(id) {
-  if (!confirm('Remove from wishlist?')) return;
+async function deleteWishlistItem(id) {
+  if (!await confirmDialog('Remove from wishlist?', { title: 'Remove from wishlist', okText: 'Remove', danger: true })) return;
   const w = db.wishlist.find(x => x.id === id);
   addAuditEntry('delete','wishlist', w ? (w.make+' '+w.model) : 'Unknown','');
   db.wishlist = db.wishlist.filter(x => x.id !== id);
   saveData(); render();
 }
 
-function moveWishlistToCollection(id) {
+async function moveWishlistToCollection(id) {
   const w = db.wishlist.find(x => x.id === id);
   if (!w) return;
-  if (!confirm('Move "' + (w.make||'')+' '+(w.model||'')+'" to your collection? This will open the Add Firearm form.')) return;
+  if (!await confirmDialog('Move "' + (w.make||'')+' '+(w.model||'')+'" to your collection? This will open the Add Firearm form.', { title: 'Move to collection', okText: 'Move' })) return;
   closeWishlistModal();
   openAddModal();
   document.getElementById('fMake').value = w.make || '';
@@ -2487,8 +2530,8 @@ async function saveDealer() {
   await saveData(); render(); closeDealerModal();
 }
 
-function deleteDealer(id) {
-  if (!confirm('Delete this dealer?')) return;
+async function deleteDealer(id) {
+  if (!await confirmDialog('Delete this dealer?', { title: 'Delete dealer', okText: 'Delete', danger: true })) return;
   const d = db.dealers.find(x => x.id === id);
   addAuditEntry('delete','dealer',d?d.name:'Unknown','');
   db.dealers = db.dealers.filter(x => x.id !== id); saveData(); render();
@@ -2930,7 +2973,7 @@ function handleCSVImport(event) {
         if (f.make || f.model) firearms.push(f);
       }
       if (firearms.length === 0) { toast('No valid rows found.'); return; }
-      if (confirm('Import ' + firearms.length + ' firearm(s) from CSV? This will ADD to your existing database.')) {
+      if (await confirmDialog('Import ' + firearms.length + ' firearm(s) from CSV? This will ADD to your existing database.', { title: 'Import from CSV', okText: 'Import' })) {
         firearms.forEach(f => db.firearms.push(f));
         addAuditEntry('create','import',firearms.length+' firearms','CSV import');
         await saveData(); render();

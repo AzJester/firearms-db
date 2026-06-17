@@ -1513,6 +1513,11 @@ table.data-table .thumb-placeholder {
 .empty-inline p { font-size: 0.88rem; margin: 0 auto; max-width: 380px; line-height: 1.5; }
 .empty-inline .btn { margin-top: 14px; }
 
+/* In-app confirm/prompt dialog (sits above other modals) */
+.app-dialog { z-index: 5000; }
+.dlg-input { width: 100%; margin-top: 12px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 0.9rem; }
+.dlg-input:focus { outline: none; border-color: var(--accent); }
+
 /* Accessibility: visible keyboard focus ring for interactive controls */
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,
 textarea:focus-visible, [contenteditable]:focus-visible, [tabindex]:focus-visible {
