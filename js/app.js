@@ -184,6 +184,7 @@ function cmdkCommands() {
     { icon: '➕', label: 'Add Accessory', kw: 'new optic suppressor', run: openAccessoryModal },
     { icon: '➕', label: 'Add Wishlist item', kw: 'new want', run: openWishlistModal },
     { icon: '➕', label: 'Add FFL Dealer', kw: 'new ffl', run: openDealerModal },
+    { icon: '⬇️', label: 'Import FFL Dealers', kw: 'bulk dealers arizona az starter list', run: openDealerImportModal },
     { icon: '📊', label: 'Go to Dashboard', kw: 'home stats charts', run: () => _gotoTab('dashboard') },
     { icon: '🔫', label: 'Go to Firearms', kw: 'all guns', run: () => _gotoTab('all') },
     { icon: '🎯', label: 'Go to Ammunition', kw: 'ammo rounds', run: () => _gotoTab('ammo') },
@@ -2243,6 +2244,7 @@ document.getElementById('settingsModal').addEventListener('click',e=>{if(e.targe
 document.getElementById('passwordModal').addEventListener('click',e=>{if(e.target===document.getElementById('passwordModal'))closePasswordModal();});
 document.getElementById('wishlistModal').addEventListener('click',e=>{if(e.target===document.getElementById('wishlistModal'))closeWishlistModal();});
 document.getElementById('dealerModal').addEventListener('click',e=>{if(e.target===document.getElementById('dealerModal'))closeDealerModal();});
+document.getElementById('dealerImportModal').addEventListener('click',e=>{if(e.target===document.getElementById('dealerImportModal'))closeDealerImportModal();});
 document.getElementById('cropModal').addEventListener('click',e=>{if(e.target===document.getElementById('cropModal'))closeCropModal();});
 document.getElementById('qrModal').addEventListener('click',e=>{if(e.target===document.getElementById('qrModal'))closeQRModal();});
 document.getElementById('shortcutsModal').addEventListener('click',e=>{if(e.target===document.getElementById('shortcutsModal'))closeShortcutsModal();});
@@ -2250,7 +2252,7 @@ document.getElementById('reportBuilderModal').addEventListener('click',e=>{if(e.
 
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
-    closeModal();closeDetail();closeAmmoModal();closeAccessoryModal();closeMaintenanceModal();closeBackupModal();closeCameraModal();closeSettingsModal();closePasswordModal();closeWishlistModal();closeDealerModal();closeCropModal();closeQRModal();closeShortcutsModal();closeReportBuilder();
+    closeModal();closeDetail();closeAmmoModal();closeAccessoryModal();closeMaintenanceModal();closeBackupModal();closeCameraModal();closeSettingsModal();closePasswordModal();closeWishlistModal();closeDealerModal();closeDealerImportModal();closeCropModal();closeQRModal();closeShortcutsModal();closeReportBuilder();
     return;
   }
   // Alt+Key shortcuts
@@ -2440,13 +2442,102 @@ function deleteDealer(id) {
   db.dealers = db.dealers.filter(x => x.id !== id); saveData(); render();
 }
 
+// ---- Bulk import -------------------------------------------------------
+// Curated Arizona starter list (public business listings). FFL license
+// numbers are intentionally blank — they must be verified per-dealer via the
+// ATF FFL eZ Check, so we never store an unverified number.
+const AZ_FFL_DEALERS = [
+  // Yuma
+  { name: "Sprague's Sports", phone: "(928) 726-0022", address: "345 W 32nd St, Yuma, AZ 85364", website: "https://www.spragues.com", notes: "Yuma — gun store, indoor range & CCW. Verify FFL # via ATF eZ Check." },
+  { name: "Sportsman's Warehouse #181", phone: "(928) 615-3200", address: "1038 S Castle Dome Ave, Yuma, AZ 85365", website: "https://www.sportsmans.com", notes: "Yuma. Verify FFL # via ATF eZ Check." },
+  { name: "C-A-L Ranch Stores (Yuma)", phone: "(928) 343-7700", address: "529 W 32nd St, Yuma, AZ 85364", website: "https://www.calranch.com", notes: "Yuma. Verify FFL # via ATF eZ Check." },
+  { name: "Caliber Arms and Ammo", phone: "(928) 371-7019", address: "11274 S Fortuna Rd, Ste D1, Yuma, AZ 85367", website: "https://www.caliberarmsandammo.com", notes: "Yuma. Verify FFL # via ATF eZ Check." },
+  { name: "2nd Amendment Hardware", phone: "(928) 446-1916", address: "4262 E Hwy 80, Yuma, AZ 85365", website: "", notes: "Yuma. Verify FFL # via ATF eZ Check." },
+  { name: "5 Shot Firearms", phone: "(928) 941-0867", address: "11640 S Glenwood Ave, Yuma, AZ 85367", website: "", notes: "Yuma. Verify FFL # via ATF eZ Check." },
+  // Phoenix metro
+  { name: "Shooter's World", phone: "(602) 266-2600", address: "3828 N 28th Ave, Phoenix, AZ 85017", website: "https://www.azshootersworld.com", notes: "Phoenix — firearms, indoor range & training. Verify FFL # via ATF eZ Check." },
+  { name: "Legendary Guns", phone: "", address: "5130 N 19th Ave, Phoenix, AZ 85015", website: "https://legendaryguns.com", notes: "Phoenix — Class III/NFA, gunsmithing, appraisals. Verify FFL # via ATF eZ Check." },
+  { name: "Tactical Armory", phone: "(602) 488-3607", address: "5602 E Calle Camelia, Phoenix, AZ 85018", website: "", notes: "Phoenix — transfers. Verify FFL # via ATF eZ Check." },
+  { name: "Scottsdale Gun Club", phone: "", address: "14860 N Northsight Blvd, Scottsdale, AZ 85260", website: "https://scottsdalegunclub.com", notes: "Scottsdale — retail & indoor range. Verify FFL # via ATF eZ Check." },
+  { name: "Caswells Shooting Range", phone: "(480) 497-5141", address: "856 E Isabella Ave, Mesa, AZ 85204", website: "https://shop.caswells.com", notes: "Mesa — retail, range & training. Verify FFL # via ATF eZ Check." },
+  { name: "C2 Tactical", phone: "", address: "Scottsdale & Tempe, AZ", website: "https://c2tactical.com", notes: "Scottsdale/Tempe — range & retail. Verify FFL # via ATF eZ Check." },
+  // Tucson
+  { name: "Murphy's Guns & Gunsmithing", phone: "(520) 881-7074", address: "3235 N Country Club Rd, Tucson, AZ 85716", website: "https://www.murphysgunshop.com", notes: "Tucson — gun shop & gunsmithing. Verify FFL # via ATF eZ Check." },
+  { name: "Diamondback Shooting Sports & Police Supply", phone: "", address: "7030 E Broadway Blvd, Tucson, AZ 85710", website: "https://dbackshootingsports.com", notes: "Tucson — retail & police supply. Verify FFL # via ATF eZ Check." },
+  { name: "Bass Pro Shops (Tucson)", phone: "", address: "1500 E Tucson Marketplace Blvd, Tucson, AZ 85713", website: "https://www.basspro.com", notes: "Tucson. Verify FFL # via ATF eZ Check." },
+  { name: "520 Tactical", phone: "", address: "5051 E 29th St, Tucson, AZ 85711", website: "", notes: "Tucson. Verify FFL # via ATF eZ Check." },
+  { name: "C-A-L Ranch Stores (Tucson)", phone: "", address: "6363 E 22nd St, Tucson, AZ 85710", website: "https://www.calranch.com", notes: "Tucson. Verify FFL # via ATF eZ Check." },
+  { name: "AZ Arms and Antiques", phone: "(520) 471-3244", address: "3033 W Gymkhana Way, Tucson, AZ 85742", website: "", notes: "Tucson. Verify FFL # via ATF eZ Check." }
+];
+
+function _dealerKey(d) { return ((d.name || '') + '|' + (d.address || '')).toLowerCase().replace(/\s+/g, ' ').trim(); }
+
+// Merge a list of raw dealer objects into db.dealers, skipping blanks and
+// duplicates (matched on name + address). Returns { added, skipped }.
+function mergeDealers(list) {
+  if (!Array.isArray(list)) return { added: 0, skipped: 0 };
+  if (!db.dealers) db.dealers = [];
+  const seen = new Set(db.dealers.map(_dealerKey));
+  let added = 0, skipped = 0;
+  list.forEach(raw => {
+    const name = (raw && raw.name != null ? String(raw.name) : '').trim();
+    if (!name) { skipped++; return; }
+    const d = {
+      id: generateId(),
+      name,
+      ffl: (raw.ffl != null ? String(raw.ffl) : '').trim(),
+      phone: (raw.phone != null ? String(raw.phone) : '').trim(),
+      email: (raw.email != null ? String(raw.email) : '').trim(),
+      address: (raw.address != null ? String(raw.address) : '').trim(),
+      website: (raw.website != null ? String(raw.website) : '').trim(),
+      notes: (raw.notes != null ? String(raw.notes) : '').trim()
+    };
+    const key = _dealerKey(d);
+    if (seen.has(key)) { skipped++; return; }
+    seen.add(key);
+    db.dealers.push(d);
+    added++;
+  });
+  if (added) addAuditEntry('import', 'dealer', added + ' dealers', '');
+  return { added, skipped };
+}
+
+function openDealerImportModal() {
+  const ta = document.getElementById('dealerImportText'); if (ta) ta.value = '';
+  document.getElementById('dealerImportModal').classList.add('open');
+}
+function closeDealerImportModal() { document.getElementById('dealerImportModal').classList.remove('open'); }
+
+async function loadAZDealers() {
+  const r = mergeDealers(AZ_FFL_DEALERS);
+  if (r.added) { await saveData(); render(); }
+  closeDealerImportModal();
+  toast(r.added + ' dealer' + (r.added === 1 ? '' : 's') + ' added' + (r.skipped ? ', ' + r.skipped + ' already present' : '') + '.');
+}
+
+async function importDealersFromText() {
+  const txt = document.getElementById('dealerImportText').value.trim();
+  if (!txt) { toast('Paste dealer JSON first.'); return; }
+  let parsed;
+  try { parsed = JSON.parse(txt); }
+  catch (e) { toast('Could not parse JSON — check the format.'); return; }
+  const list = Array.isArray(parsed) ? parsed : (parsed && Array.isArray(parsed.dealers) ? parsed.dealers : null);
+  if (!list) { toast('Expected a JSON array of dealer objects.'); return; }
+  const r = mergeDealers(list);
+  if (r.added) { await saveData(); render(); closeDealerImportModal(); }
+  toast(r.added + ' imported' + (r.skipped ? ', ' + r.skipped + ' skipped (duplicate/blank)' : '') + '.');
+}
+
 function renderDealersTab() {
   document.getElementById('cardGrid').style.display = 'none';
   document.getElementById('tableContainer').style.display = 'block';
   document.getElementById('emptyState').style.display = 'none';
   const items = db.dealers || [];
-  let h = '<div style="padding:16px 24px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:0.86rem;font-weight:600;">FFL Dealers: <span style="color:var(--accent);">' + items.length + '</span></div>';
-  if (items.length === 0) { h += '<div style="text-align:center;padding:40px;color:var(--text2);">No dealers saved yet.</div>'; document.getElementById('tableContainer').innerHTML = h; return; }
+  let h = '<div style="padding:16px 24px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">'
+    + '<span style="font-size:0.86rem;font-weight:600;">FFL Dealers: <span style="color:var(--accent);">' + items.length + '</span></span>'
+    + '<button class="btn btn-small btn-secondary" onclick="openDealerImportModal()">⬇️ Import dealers</button>'
+    + '</div>';
+  if (items.length === 0) { h += '<div style="text-align:center;padding:40px;color:var(--text2);">No dealers saved yet.<div style="margin-top:16px;"><button class="btn btn-primary" onclick="openDealerImportModal()">⬇️ Import dealers</button></div></div>'; document.getElementById('tableContainer').innerHTML = h; return; }
   h += '<div style="padding:16px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">';
   items.forEach(d => {
     h += '<div class="ffl-card" style="cursor:pointer;" onclick="openDealerModal(\''+d.id+'\')">';
