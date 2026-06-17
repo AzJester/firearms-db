@@ -2467,6 +2467,18 @@ async function moveWishlistToCollection(id) {
   document.getElementById('fPrice').value = w.price || '';
 }
 
+let _wishFilter = 'all';
+const _wishPrio = (w) => (w.priority === 'high' || w.priority === 'low') ? w.priority : 'medium';
+function setWishlistFilter(p) { _wishFilter = p; renderWishlistTab(); }
+// Click a priority pill to cycle High → Medium → Low.
+function cycleWishlistPriority(id) {
+  const w = (db.wishlist || []).find(x => x.id === id);
+  if (!w) return;
+  const order = ['high', 'medium', 'low'];
+  w.priority = order[(order.indexOf(_wishPrio(w)) + 1) % order.length];
+  saveData(); renderWishlistTab();
+}
+
 function renderWishlistTab() {
   document.getElementById('cardGrid').style.display = 'none';
   document.getElementById('tableContainer').style.display = 'block';
@@ -2475,12 +2487,30 @@ function renderWishlistTab() {
   const totalTarget = items.reduce((s, w) => s + (parseFloat(w.price) || 0), 0);
   let h = '<div style="padding:16px 24px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.86rem;font-weight:600;"><span>Wishlist Items: <span style="color:var(--accent);">' + items.length + '</span></span><span>Target Budget: <span style="color:var(--accent);">$' + totalTarget.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span></span></div>';
   if (items.length === 0) { h += tabEmpty('⭐', 'Your wishlist is empty', 'Track guns you want, set a target price and priority, then move them to your collection when you buy.', '<button class="btn btn-primary" onclick="openWishlistModal()">+ Add Wishlist Item</button>'); document.getElementById('tableContainer').innerHTML = h; return; }
+
+  // Budget split + counts by priority
+  const byP = { high: 0, medium: 0, low: 0 }, cnt = { high: 0, medium: 0, low: 0 };
+  items.forEach(w => { const p = _wishPrio(w); byP[p] += parseFloat(w.price) || 0; cnt[p]++; });
+  if (totalTarget > 0) {
+    const seg = (p, c) => byP[p] > 0 ? '<span style="width:' + (byP[p] / totalTarget * 100).toFixed(1) + '%;background:' + c + ';" title="' + p + ': $' + byP[p].toLocaleString() + '"></span>' : '';
+    const leg = (p, c, label) => '<span><i style="background:' + c + '"></i>' + label + ' $' + byP[p].toLocaleString() + '</span>';
+    h += '<div class="wish-budget"><div class="wish-budget-bar">' + seg('high', 'var(--red)') + seg('medium', '#d9a400') + seg('low', 'var(--green)') + '</div>'
+      + '<div class="wish-budget-legend">' + leg('high', 'var(--red)', 'High') + leg('medium', '#d9a400', 'Medium') + leg('low', 'var(--green)', 'Low') + '</div></div>';
+  }
+
+  // Priority filter chips
+  if (_wishFilter !== 'all' && !cnt[_wishFilter]) _wishFilter = 'all';
+  const chip = (p, label, n) => '<button class="dealer-chip' + (_wishFilter === p ? ' active' : '') + '" onclick="setWishlistFilter(\'' + p + '\')">' + label + ' <span class="dealer-chip-n">' + n + '</span></button>';
+  h += '<div class="dealer-filterbar"><div class="dealer-chips">' + chip('all', 'All', items.length) + chip('high', 'High', cnt.high) + chip('medium', 'Medium', cnt.medium) + chip('low', 'Low', cnt.low) + '</div></div>';
+
+  let rows = [...items].sort((a, b) => { const o = { high: 0, medium: 1, low: 2 }; return o[_wishPrio(a)] - o[_wishPrio(b)]; });
+  if (_wishFilter !== 'all') rows = rows.filter(w => _wishPrio(w) === _wishFilter);
+
   h += '<table class="data-table"><thead><tr><th>Priority</th><th>Make</th><th>Model</th><th>Caliber</th><th>Type</th><th>Target Price</th><th>Dealer</th><th>Added</th><th></th></tr></thead><tbody>';
-  const sorted = [...items].sort((a,b) => {const p={high:0,medium:1,low:2}; return (p[a.priority]||1)-(p[b.priority]||1);});
-  sorted.forEach(w => {
+  rows.forEach(w => {
     const pr = w.price ? '$'+parseFloat(w.price).toLocaleString() : '--';
     h += '<tr style="cursor:pointer;" onclick="openWishlistModal(\''+w.id+'\')">';
-    h += '<td><span class="wishlist-priority '+w.priority+'">'+(w.priority||'medium').toUpperCase()+'</span></td>';
+    h += '<td><button class="wishlist-priority '+_wishPrio(w)+'" title="Click to change priority" aria-label="Priority: '+_wishPrio(w)+' (click to change)" onclick="event.stopPropagation();cycleWishlistPriority(\''+w.id+'\')">'+_wishPrio(w).toUpperCase()+'</button></td>';
     h += '<td>'+esc(w.make||'--')+'</td><td>'+esc(w.model||'--')+'</td><td>'+esc(w.caliber||'--')+'</td><td>'+esc(w.type||'--')+'</td><td>'+pr+'</td>';
     h += '<td>'+(w.url?'<a href="'+esc(w.url)+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);">'+esc(w.dealer||'Link')+'</a>':esc(w.dealer||'--'))+'</td>';
     h += '<td>'+fmtDate(w.dateAdded)+'</td>';
