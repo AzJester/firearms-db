@@ -228,6 +228,7 @@
       <div>Ammo: <span class="stat-val" id="statAmmo">0</span></div>
       <div>Value: <span class="stat-val" id="statValue">$0</span></div>
     </div>
+    <button class="bell-btn" id="cmdkBtn" onclick="openCmdK()" title="Search / commands (Ctrl or &#8984; K)" aria-label="Search">&#128269;</button>
     <button class="bell-btn" id="reminderBell" onclick="openReminders()" title="Reminders" aria-label="Reminders">&#128276;<span class="bell-badge" id="reminderBadge" style="display:none;">0</span></button>
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode">&#9790;</button>
     <div class="menu" id="acctMenu">
@@ -913,6 +914,16 @@
     </div>
   </div>
 </nav>
+
+<!-- Command palette -->
+<div id="cmdk" class="cmdk" style="display:none;" onclick="if(event.target===this)closeCmdK()">
+  <div class="cmdk-box" role="dialog" aria-label="Command palette">
+    <input id="cmdkInput" class="cmdk-input" type="text" autocomplete="off" spellcheck="false"
+      placeholder="Search firearms, jump to a tab, or run an action…" oninput="cmdkRender()">
+    <div id="cmdkResults" class="cmdk-results"></div>
+    <div class="cmdk-foot"><span>&#8593;&#8595; navigate</span><span>&#8629; select</span><span>esc close</span></div>
+  </div>
+</div>
 
 </div><!-- /#appRoot -->
 
