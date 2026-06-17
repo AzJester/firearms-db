@@ -1559,3 +1559,27 @@ table.data-table th { letter-spacing: 0.3px; }
 .bell-btn { display: inline-flex; align-items: center; justify-content: center; }
 .bn-ico svg { width: 22px; height: 22px; display: block; }
 .bn-fab svg { width: 26px; height: 26px; }
+
+/* ===== DASHBOARD v2 (v3.6) ===== */
+.dash-h3-flex { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.dash-chart-sm { position: relative; height: 230px; margin-top: 6px; }
+.dash-range { display: inline-flex; gap: 2px; background: var(--bg3); border-radius: 8px; padding: 2px; }
+.dash-range button { border: none; background: none; color: var(--text2); font-size: 0.72rem; font-weight: 600; padding: 4px 9px; border-radius: 6px; cursor: pointer; }
+.dash-range button.active { background: var(--card-bg); color: var(--accent); box-shadow: var(--shadow); }
+/* alerts */
+.dash-alerts { display: flex; flex-direction: column; gap: 7px; }
+.dash-alert { display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: 9px; cursor: pointer;
+  background: var(--bg2); border-left: 4px solid var(--text3); font-size: 0.84rem; color: var(--text); transition: background 0.12s, transform 0.08s; }
+.dash-alert:hover { background: var(--accent-light); transform: translateX(2px); }
+.dash-alert.sev-high { border-left-color: var(--red); }
+.dash-alert.sev-med { border-left-color: var(--yellow); }
+.dash-alert-ico { font-size: 1rem; flex-shrink: 0; }
+/* highlights */
+.dash-highlight { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 10px; cursor: pointer; transition: background 0.12s; }
+.dash-highlight:hover { background: var(--bg2); }
+.dash-highlight + .dash-highlight { margin-top: 4px; }
+.dh-img { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: var(--bg3); flex-shrink: 0; }
+.dh-img.dh-ph { display: flex; align-items: center; justify-content: center; color: var(--border); font-size: 1.4rem; }
+.dh-label { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); font-weight: 600; }
+.dh-title { font-weight: 700; font-size: 0.92rem; color: var(--text); }
+.dh-sub { font-size: 0.82rem; color: var(--accent); font-weight: 600; }

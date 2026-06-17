@@ -985,6 +985,10 @@ function setView(v) {
 let _dashCharts = [];
 function _destroyDashCharts() { _dashCharts.forEach(c => { try { c.destroy(); } catch (e) {} }); _dashCharts = []; }
 
+let _dashRange = 90;
+function setDashRange(n) { _dashRange = n; renderDashboard(); }
+window.setDashRange = setDashRange;
+
 function renderDashboard() {
   const container = document.getElementById('dashboardContainer');
   _destroyDashCharts();
@@ -995,176 +999,139 @@ function renderDashboard() {
   const totalVal = fVal + accVal;
   const totalAmmoRounds = db.ammo.reduce((s, a) => s + (parseInt(a.quantity) || 0), 0);
   const totalAmmoVal = db.ammo.reduce((s, a) => s + ((parseInt(a.quantity) || 0) * (parseFloat(a.pricePerRound) || 0)), 0);
+  const totalInvested = totalVal + totalAmmoVal;
+  const fmt$ = n => '$' + Math.round(n || 0).toLocaleString();
+  const note = m => '<div style="color:var(--text3);font-size:0.82rem;padding:8px;">' + m + '</div>';
+  const barRow = (label, n, max, color) => '<div class="dash-bar-row"><span class="dash-bar-label">' + esc(label) +
+    '</span><div class="dash-bar-track"><div class="dash-bar-fill" style="width:' + (n / max * 100).toFixed(1) + '%;background:' + color + ';"></div></div><span class="dash-bar-val">' + n + '</span></div>';
 
-  // Type breakdown
-  const types = {};
-  active.forEach(f => { const t = f.type || 'Other'; types[t] = (types[t] || 0) + 1; });
-  const maxTypeCount = Math.max(...Object.values(types), 1);
-  let typeChart = Object.entries(types).sort((a, b) => b[1] - a[1]).map(([t, c]) =>
-    `<div class="dash-bar-row"><span class="dash-bar-label">${esc(t)}</span><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${(c / maxTypeCount * 100).toFixed(1)}%"></div></div><span class="dash-bar-val">${c}</span></div>`
-  ).join('');
+  // Realized profit/loss from disposed firearms
+  let realizedPL = 0, soldCount = 0;
+  db.firearms.forEach(f => { const pl = getProfitLoss(f); if (pl !== null) { realizedPL += pl; soldCount++; } });
 
-  // Caliber breakdown (top 8)
-  const cals = {};
-  active.forEach(f => { if (f.caliber) cals[f.caliber] = (cals[f.caliber] || 0) + 1; });
+  // Breakdowns
+  const types = {}; active.forEach(f => { const t = f.type || 'Other'; types[t] = (types[t] || 0) + 1; });
+  const cals = {}; active.forEach(f => { if (f.caliber) cals[f.caliber] = (cals[f.caliber] || 0) + 1; });
   const calEntries = Object.entries(cals).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  const maxCalCount = Math.max(...calEntries.map(e => e[1]), 1);
-  let calChart = calEntries.map(([c, n]) =>
-    `<div class="dash-bar-row"><span class="dash-bar-label">${esc(c)}</span><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${(n / maxCalCount * 100).toFixed(1)}%;background:var(--green);"></div></div><span class="dash-bar-val">${n}</span></div>`
-  ).join('');
+  const makes = {}; active.forEach(f => { const m = (f.make || 'Unknown').trim() || 'Unknown'; makes[m] = (makes[m] || 0) + 1; });
+  const makeEntries = Object.entries(makes).sort((a, b) => b[1] - a[1]).slice(0, 8);
 
-  // NFA status
+  // NFA
   const nfaItems = active.filter(f => f.isNFA);
+  const nfaCount = nfaItems.length;
   const nfaApproved = nfaItems.filter(f => f.stampStatus === 'Approved').length;
   const nfaPending = nfaItems.filter(f => f.stampStatus === 'Pending' || f.stampStatus === 'Submitted').length;
   const nfaDenied = nfaItems.filter(f => f.stampStatus === 'Denied').length;
+  const pendingNFA = nfaItems.filter(f => f.dateSubmitted && !f.dateApproved);
+  const avgWait = pendingNFA.length ? Math.round(pendingNFA.reduce((s, f) => s + (Date.now() - new Date(f.dateSubmitted)) / 86400000, 0) / pendingNFA.length) : null;
 
-  // Condition breakdown
-  const conditions = {};
-  active.forEach(f => { const c = f.condition || 'Unknown'; conditions[c] = (conditions[c] || 0) + 1; });
-  let condList = Object.entries(conditions).sort((a, b) => b[1] - a[1]).map(([c, n]) =>
-    `<div class="dash-list-item"><span class="label">${esc(c)}</span><span class="value">${n}</span></div>`
-  ).join('');
-
-  // Recent acquisitions (last 5)
+  // Condition / recent / tags
+  const conditions = {}; active.forEach(f => { const c = f.condition || 'Unknown'; conditions[c] = (conditions[c] || 0) + 1; });
+  let condList = Object.entries(conditions).sort((a, b) => b[1] - a[1]).map(([c, n]) => '<div class="dash-list-item"><span class="label">' + esc(c) + '</span><span class="value">' + n + '</span></div>').join('');
   const recent = [...active].filter(f => f.dateAcquired).sort((a, b) => b.dateAcquired.localeCompare(a.dateAcquired)).slice(0, 5);
-  let recentList = recent.map(f =>
-    `<div class="dash-list-item"><span class="label">${esc((f.make || '') + ' ' + (f.model || ''))}</span><span class="value">${fmtDate(f.dateAcquired)}</span></div>`
-  ).join('');
-  if (!recentList) recentList = '<div style="color:var(--text3);font-size:0.82rem;padding:8px;">No recent acquisitions.</div>';
-
-  // Top tags
-  const tagCounts = {};
-  active.forEach(f => { if (f.tags) f.tags.forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; }); });
+  let recentList = recent.map(f => '<div class="dash-list-item"><span class="label">' + esc((f.make || '') + ' ' + (f.model || '')) + '</span><span class="value">' + fmtDate(f.dateAcquired) + '</span></div>').join('');
+  if (!recentList) recentList = note('No recent acquisitions.');
+  const tagCounts = {}; active.forEach(f => { if (f.tags) f.tags.forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; }); });
   const topTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
-  let tagsList = topTags.map(([t, n]) =>
-    `<div class="dash-list-item"><span class="label"><span class="tag-pill">${esc(t)}</span></span><span class="value">${n}</span></div>`
-  ).join('');
-  if (!tagsList) tagsList = '<div style="color:var(--text3);font-size:0.82rem;padding:8px;">No tags assigned yet.</div>';
+  let tagsList = topTags.map(([t, n]) => '<div class="dash-list-item"><span class="label"><span class="tag-pill">' + esc(t) + '</span></span><span class="value">' + n + '</span></div>').join('');
+  if (!tagsList) tagsList = note('No tags assigned yet.');
 
-  // Manufacturer breakdown (top 8 by make)
-  const makes = {};
-  active.forEach(f => { const m = (f.make || 'Unknown').trim() || 'Unknown'; makes[m] = (makes[m] || 0) + 1; });
-  const makeEntries = Object.entries(makes).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  const maxMakeCount = Math.max(...makeEntries.map(e => e[1]), 1);
-  const mfgChart = makeEntries.map(([m, n]) =>
-    `<div class="dash-bar-row"><span class="dash-bar-label">${esc(m)}</span><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${(n / maxMakeCount * 100).toFixed(1)}%;background:#7e57c2;"></div></div><span class="dash-bar-val">${n}</span></div>`
-  ).join('');
+  const thumbOf = f => (f && f.images && f.images[0]) ? (thumbCache[f.images[0]] || imagesDb[f.images[0]]) : null;
 
   // KPI cards
-  const nfaCount = active.filter(f => f.isNFA).length;
   const kpis = [
-    { icon: '&#128737;', label: 'Active Firearms', value: totalFirearms },
-    { icon: '&#128176;', label: 'Collection Value', value: '$' + totalVal.toLocaleString() },
-    { icon: '&#128196;', label: 'NFA Items', value: nfaCount },
-    { icon: '&#127919;', label: 'Total Rounds', value: totalAmmoRounds.toLocaleString() },
-    { icon: '&#128230;', label: 'Accessories', value: db.accessories.length }
+    { icon: '\u{1F6E1}\u{FE0F}', label: 'Active Firearms', value: totalFirearms, color: '#3b82f6' },
+    { icon: '\u{1F4B0}', label: 'Collection Value', value: fmt$(totalVal), color: '#10b981' },
+    { icon: '\u{1F4C8}', label: 'Total Invested', value: fmt$(totalInvested), color: '#8b5cf6' },
+    { icon: '\u{1F3AF}', label: 'Total Rounds', value: totalAmmoRounds.toLocaleString(), color: '#f59e0b' },
+    { icon: '\u{1F4C4}', label: 'NFA Items', value: nfaCount, color: '#06b6d4' },
+    { icon: '\u{1F4B9}', label: soldCount ? (realizedPL >= 0 ? 'Realized Gain' : 'Realized Loss') : 'Realized P/L',
+      value: (realizedPL < 0 ? '-' : '') + fmt$(Math.abs(realizedPL)), color: realizedPL >= 0 ? '#10b981' : '#ef4444' }
   ];
-  const kpiRow = `<div class="dash-card dash-kpi-card"><div class="dash-kpis">` +
-    kpis.map(k => `<div class="dash-kpi"><div class="dash-kpi-icon">${k.icon}</div><div class="dash-kpi-text"><div class="dash-kpi-value">${k.value}</div><div class="dash-kpi-label">${k.label}</div></div></div>`).join('') +
-    `</div></div>`;
+  const kpiRow = '<div class="dash-card dash-kpi-card"><div class="dash-kpis">' +
+    kpis.map(k => '<div class="dash-kpi"><div class="dash-kpi-icon" style="background:' + k.color + '22;color:' + k.color + ';">' + k.icon +
+      '</div><div class="dash-kpi-text"><div class="dash-kpi-value">' + k.value + '</div><div class="dash-kpi-label">' + k.label + '</div></div></div>').join('') +
+    '</div></div>';
 
-  const hist = (db.valueHistory || []).slice(-60);
+  // Alerts (reminders) card
+  const reminders = (typeof computeReminders === 'function') ? computeReminders() : [];
+  const alertsCard = reminders.length ? '<div class="dash-card dash-wide"><h3>⚠️ Needs attention (' + reminders.length + ')</h3><div class="dash-alerts">' +
+    reminders.slice(0, 6).map(r => '<div class="dash-alert sev-' + r.sev + '" onclick="reminderGo(\'' + r.itemType + '\',\'' + r.itemId + '\')"><span class="dash-alert-ico">' + r.icon + '</span><span>' + esc(r.text) + '</span></div>').join('') +
+    '</div></div>' : '';
+
+  // Highlights
+  let highlightsCard = '';
+  if (active.length) {
+    const mv = active.reduce((best, f) => getTotalInvestment(f.id) > getTotalInvestment(best.id) ? f : best, active[0]);
+    const nw = recent[0];
+    const hl = (f, label, sub) => {
+      const t = thumbOf(f);
+      const img = t ? '<img class="dh-img" src="' + t + '">' : '<div class="dh-img dh-ph">✦</div>';
+      return '<div class="dash-highlight" onclick="openDetail(\'' + f.id + '\')">' + img + '<div class="dh-text"><div class="dh-label">' + label +
+        '</div><div class="dh-title">' + esc((f.make || '') + ' ' + (f.model || '')) + '</div><div class="dh-sub">' + sub + '</div></div></div>';
+    };
+    highlightsCard = '<div class="dash-card"><h3>Highlights</h3>' + hl(mv, 'Most valuable', fmt$(getTotalInvestment(mv.id))) + (nw ? hl(nw, 'Newest acquisition', fmtDate(nw.dateAcquired)) : '') + '</div>';
+  }
+
+  // Value-over-time with range toggle
+  const hist = (db.valueHistory || []).slice(-_dashRange);
   const hasValueChart = hist.length >= 2;
+  const rangeBtns = '<span class="dash-range">' + [[30, '30d'], [90, '90d'], [365, '1y'], [100000, 'All']].map(r =>
+    '<button class="' + (_dashRange === r[0] ? 'active' : '') + '" onclick="setDashRange(' + r[0] + ')">' + r[1] + '</button>').join('') + '</span>';
 
-  container.innerHTML = kpiRow + `
-    <div class="dash-card dash-wide">
-      <h3>Collection Value Over Time</h3>
-      ${hasValueChart ? '<div class="dash-chart-wrap"><canvas id="valueChartCanvas"></canvas></div>'
-        : '<div style="color:var(--text3);font-size:0.82rem;padding:8px;">Value history builds over time — check back after a few days of use.</div>'}
-    </div>
-    <div class="dash-card">
-      <h3>Top Manufacturers</h3>
-      <div class="dash-bar-chart">${mfgChart || '<div style="color:var(--text3);font-size:0.82rem;">No data.</div>'}</div>
-    </div>
-    <div class="dash-card">
-      <h3>Collection Overview</h3>
-      <div class="dash-big-num">${totalFirearms}</div>
-      <div class="dash-sub">Active Firearms</div>
-      <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="dash-list-item"><span class="label">Firearms Value</span><span class="value">$${fVal.toLocaleString()}</span></div>
-        <div class="dash-list-item"><span class="label">Accessories Value</span><span class="value">$${accVal.toLocaleString()}</span></div>
-        <div class="dash-list-item"><span class="label">Total Value</span><span class="value" style="color:var(--accent);">$${totalVal.toLocaleString()}</span></div>
-        <div class="dash-list-item"><span class="label">Accessories</span><span class="value">${db.accessories.length}</span></div>
-      </div>
-    </div>
-    <div class="dash-card">
-      <h3>Firearms by Type</h3>
-      <div class="dash-bar-chart">${typeChart || '<div style="color:var(--text3);font-size:0.82rem;">No firearms yet.</div>'}</div>
-    </div>
-    <div class="dash-card">
-      <h3>Top Calibers</h3>
-      <div class="dash-bar-chart">${calChart || '<div style="color:var(--text3);font-size:0.82rem;">No caliber data.</div>'}</div>
-    </div>
-    <div class="dash-card">
-      <h3>NFA Items (${nfaItems.length})</h3>
-      <div class="dash-nfa-status">
-        <div class="dash-nfa-pill" style="background:var(--green-bg);color:var(--green);">Approved: ${nfaApproved}</div>
-        <div class="dash-nfa-pill" style="background:var(--yellow-bg);color:#8a6d00;">Pending: ${nfaPending}</div>
-        ${nfaDenied > 0 ? `<div class="dash-nfa-pill" style="background:var(--red-light);color:var(--red);">Denied: ${nfaDenied}</div>` : ''}
-      </div>
-      ${nfaItems.filter(f => f.dateSubmitted && !f.dateApproved).length > 0 ? '<div style="margin-top:14px;"><h4 style="font-size:0.76rem;color:var(--text3);margin-bottom:8px;">PENDING WAIT TIMES</h4>' +
-        nfaItems.filter(f => f.dateSubmitted && !f.dateApproved).map(f => {
-          const days = Math.round((new Date() - new Date(f.dateSubmitted)) / 86400000);
-          return `<div class="dash-list-item"><span class="label">${esc((f.make||'')+ ' ' + (f.model||''))}</span><span class="value">${days} days</span></div>`;
-        }).join('') + '</div>' : ''}
-    </div>
-    <div class="dash-card">
-      <h3>Ammunition</h3>
-      <div class="dash-big-num">${totalAmmoRounds.toLocaleString()}</div>
-      <div class="dash-sub">Total Rounds</div>
-      <div style="margin-top:10px;" class="dash-list-item"><span class="label">Ammo Value</span><span class="value">$${totalAmmoVal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
-      <div style="margin-top:4px;" class="dash-list-item"><span class="label">Ammo Types</span><span class="value">${db.ammo.length}</span></div>
-    </div>
-    <div class="dash-card">
-      <h3>Condition</h3>
-      <div class="dash-list">${condList || '<div style="color:var(--text3);font-size:0.82rem;">No data.</div>'}</div>
-    </div>
-    <div class="dash-card">
-      <h3>Recent Acquisitions</h3>
-      <div class="dash-list">${recentList}</div>
-    </div>
-    <div class="dash-card">
-      <h3>Tags</h3>
-      <div class="dash-list">${tagsList}</div>
-    </div>
-  `;
+  const hasC = !!window.Chart;
+  const chartCard = (title, id, fallback) => '<div class="dash-card"><h3>' + title + '</h3>' +
+    (hasC ? '<div class="dash-chart-sm"><canvas id="' + id + '"></canvas></div>' : '<div class="dash-bar-chart">' + (fallback || note('No data.')) + '</div>') + '</div>';
+  const maxType = Math.max(...Object.values(types), 1);
+  const typeFallback = Object.entries(types).sort((a, b) => b[1] - a[1]).map(([t, c]) => barRow(t, c, maxType, 'var(--accent)')).join('');
+  const maxCal = Math.max(...calEntries.map(e => e[1]), 1);
+  const calFallback = calEntries.map(([c, n]) => barRow(c, n, maxCal, 'var(--green)')).join('');
+  const maxMake = Math.max(...makeEntries.map(e => e[1]), 1);
+  const mfgFallback = makeEntries.map(([m, n]) => barRow(m, n, maxMake, '#8b5cf6')).join('');
 
-  // Render the value-over-time line chart (Chart.js). Degrades gracefully.
-  if (hasValueChart && window.Chart) {
-    const canvas = document.getElementById('valueChartCanvas');
-    if (canvas) {
-      const css = getComputedStyle(document.body);
-      const accent = (css.getPropertyValue('--accent') || '#1a3a5c').trim();
-      const grid = (css.getPropertyValue('--border-light') || '#e8eaed').trim();
-      const text = (css.getPropertyValue('--text2') || '#5f6368').trim();
-      try {
-        const chart = new Chart(canvas, {
-          type: 'line',
-          data: {
-            labels: hist.map(h => h.date),
-            datasets: [{
-              label: 'Collection value',
-              data: hist.map(h => h.value),
-              borderColor: accent,
-              backgroundColor: accent + '22',
-              fill: true, tension: 0.3, pointRadius: hist.length > 30 ? 0 : 3,
-              borderWidth: 2
-            }]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false },
-              tooltip: { callbacks: { label: c => '$' + Number(c.parsed.y).toLocaleString() } } },
-            scales: {
-              x: { grid: { color: grid }, ticks: { color: text, maxTicksLimit: 8 } },
-              y: { grid: { color: grid }, ticks: { color: text, callback: v => '$' + Number(v).toLocaleString() } }
-            }
-          }
-        });
-        _dashCharts.push(chart);
-      } catch (e) { console.warn('value chart failed', e); }
-    }
+  const nfaCard = '<div class="dash-card"><h3>NFA Items (' + nfaItems.length + ')</h3>' +
+    '<div class="dash-nfa-status">' +
+      '<div class="dash-nfa-pill" style="background:var(--green-bg);color:var(--green);">Approved: ' + nfaApproved + '</div>' +
+      '<div class="dash-nfa-pill" style="background:var(--yellow-bg);color:#8a6d00;">Pending: ' + nfaPending + '</div>' +
+      (nfaDenied > 0 ? '<div class="dash-nfa-pill" style="background:var(--red-light);color:var(--red);">Denied: ' + nfaDenied + '</div>' : '') +
+    '</div>' +
+    (avgWait !== null ? '<div class="dash-list-item" style="margin-top:12px;"><span class="label">Avg pending wait</span><span class="value">' + avgWait + ' days</span></div>' : '') +
+    (pendingNFA.length ? '<div style="margin-top:10px;"><h4 style="font-size:0.74rem;color:var(--text3);margin-bottom:6px;">PENDING</h4>' +
+      pendingNFA.map(f => { const days = Math.round((Date.now() - new Date(f.dateSubmitted)) / 86400000); return '<div class="dash-list-item"><span class="label">' + esc((f.make || '') + ' ' + (f.model || '')) + '</span><span class="value">' + days + ' days</span></div>'; }).join('') + '</div>' : '') +
+    '</div>';
+
+  const ammoCard = '<div class="dash-card"><h3>Ammunition</h3><div class="dash-big-num">' + totalAmmoRounds.toLocaleString() + '</div><div class="dash-sub">Total Rounds</div>' +
+    '<div style="margin-top:10px;" class="dash-list-item"><span class="label">Ammo Value</span><span class="value">$' + totalAmmoVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</span></div>' +
+    '<div style="margin-top:4px;" class="dash-list-item"><span class="label">Ammo Types</span><span class="value">' + db.ammo.length + '</span></div></div>';
+
+  container.innerHTML = alertsCard + kpiRow +
+    '<div class="dash-card dash-wide"><h3 class="dash-h3-flex"><span>Collection Value Over Time</span>' + rangeBtns + '</h3>' +
+      (hasValueChart ? '<div class="dash-chart-wrap"><canvas id="valueChartCanvas"></canvas></div>' : note('Value history builds over time — check back after a few days of use.')) + '</div>' +
+    highlightsCard +
+    chartCard('Firearms by Type', 'typeChartCanvas', typeFallback) +
+    chartCard('Top Calibers', 'calChartCanvas', calFallback) +
+    chartCard('Top Manufacturers', 'mfgChartCanvas', mfgFallback) +
+    nfaCard + ammoCard +
+    '<div class="dash-card"><h3>Condition</h3><div class="dash-list">' + (condList || note('No data.')) + '</div></div>' +
+    '<div class="dash-card"><h3>Recent Acquisitions</h3><div class="dash-list">' + recentList + '</div></div>' +
+    '<div class="dash-card"><h3>Tags</h3><div class="dash-list">' + tagsList + '</div></div>';
+
+  // ---- Chart.js instances ----
+  if (hasC) {
+    const css = getComputedStyle(document.body);
+    const cv = (k, d) => (css.getPropertyValue(k) || d).trim();
+    const accent = cv('--accent', '#1a3a5c'), gridc = cv('--border-light', '#e8eaed'), textc = cv('--text2', '#5f6368');
+    const palette = ['#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#f59e0b', '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1'];
+    const mk = (id, cfg) => { const c = document.getElementById(id); if (!c) return; try { _dashCharts.push(new Chart(c, cfg)); } catch (e) { console.warn('chart ' + id, e); } };
+    const barOpts = { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { ticks: { color: textc, precision: 0 }, grid: { color: gridc } }, y: { ticks: { color: textc }, grid: { display: false } } } };
+    const typeLabels = Object.keys(types), typeData = Object.values(types);
+    if (typeData.length) mk('typeChartCanvas', { type: 'doughnut', data: { labels: typeLabels, datasets: [{ data: typeData, backgroundColor: palette, borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { color: textc, boxWidth: 12, padding: 8, font: { size: 11 } } } } } });
+    if (calEntries.length) mk('calChartCanvas', { type: 'bar', data: { labels: calEntries.map(e => e[0]), datasets: [{ data: calEntries.map(e => e[1]), backgroundColor: '#10b981', borderRadius: 4 }] }, options: barOpts });
+    if (makeEntries.length) mk('mfgChartCanvas', { type: 'bar', data: { labels: makeEntries.map(e => e[0]), datasets: [{ data: makeEntries.map(e => e[1]), backgroundColor: '#8b5cf6', borderRadius: 4 }] }, options: barOpts });
+    if (hasValueChart) mk('valueChartCanvas', { type: 'line', data: { labels: hist.map(h => h.date), datasets: [{ label: 'Value', data: hist.map(h => h.value), borderColor: accent, backgroundColor: accent + '22', fill: true, tension: 0.3, pointRadius: hist.length > 30 ? 0 : 3, borderWidth: 2 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => '$' + Number(c.parsed.y).toLocaleString() } } }, scales: { x: { grid: { color: gridc }, ticks: { color: textc, maxTicksLimit: 8 } }, y: { grid: { color: gridc }, ticks: { color: textc, callback: v => '$' + Number(v).toLocaleString() } } } } });
   }
 }
 
