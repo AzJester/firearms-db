@@ -1462,3 +1462,21 @@ table.data-table .thumb-placeholder {
   #shortcutsBtn { display: none; }
 }
 @media print { .bottom-nav { display: none !important; } }
+
+/* ===== COMMAND PALETTE (v3.1) ===== */
+.cmdk { position: fixed; inset: 0; z-index: 9500; background: rgba(0,0,0,0.45);
+  display: flex; align-items: flex-start; justify-content: center; padding: 12vh 16px 16px; }
+.cmdk-box { width: 100%; max-width: 560px; background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 14px; box-shadow: var(--shadow-hover); overflow: hidden; }
+.cmdk-input { width: 100%; border: none; border-bottom: 1px solid var(--border-light); background: var(--card-bg);
+  color: var(--text); font-size: 1rem; padding: 16px 18px; outline: none; font-family: inherit; }
+.cmdk-results { max-height: 50vh; overflow-y: auto; padding: 6px; }
+.cmdk-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 8px; cursor: pointer; }
+.cmdk-item.sel { background: var(--accent-light); }
+.cmdk-ico { font-size: 1.05rem; width: 22px; text-align: center; flex-shrink: 0; }
+.cmdk-label { flex: 1; font-size: 0.9rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cmdk-hint { font-size: 0.74rem; color: var(--text3); white-space: nowrap; }
+.cmdk-empty { padding: 22px; text-align: center; color: var(--text3); font-size: 0.86rem; }
+.cmdk-foot { display: flex; gap: 16px; justify-content: center; padding: 8px; border-top: 1px solid var(--border-light);
+  font-size: 0.68rem; color: var(--text3); }
+@media (max-width: 600px) { .cmdk { padding-top: 6vh; } .cmdk-foot { display: none; } }

@@ -152,6 +152,100 @@ window.ctxAdd = ctxAdd;
 window.toggleFilters = toggleFilters;
 
 // =====================================================
+// COMMAND PALETTE (Ctrl/Cmd + K)
+// =====================================================
+let cmdkItems = [], cmdkSel = 0;
+function _gotoTab(t) { const el = document.querySelector('.tab[data-tab="' + t + '"]'); if (el) el.click(); }
+function cmdkCommands() {
+  return [
+    { icon: '➕', label: 'Add Firearm', kw: 'new create gun', run: openAddModal },
+    { icon: '➕', label: 'Add Ammo', kw: 'new ammunition rounds', run: openAddAmmoModal },
+    { icon: '➕', label: 'Add Accessory', kw: 'new optic suppressor', run: openAccessoryModal },
+    { icon: '➕', label: 'Add Wishlist item', kw: 'new want', run: openWishlistModal },
+    { icon: '➕', label: 'Add FFL Dealer', kw: 'new ffl', run: openDealerModal },
+    { icon: '📊', label: 'Go to Dashboard', kw: 'home stats charts', run: () => _gotoTab('dashboard') },
+    { icon: '🔫', label: 'Go to Firearms', kw: 'all guns', run: () => _gotoTab('all') },
+    { icon: '🎯', label: 'Go to Ammunition', kw: 'ammo rounds', run: () => _gotoTab('ammo') },
+    { icon: '📦', label: 'Go to Accessories', kw: 'parts optics', run: () => _gotoTab('accessories') },
+    { icon: '📄', label: 'Go to NFA Items', kw: 'tax stamp suppressor sbr', run: () => _gotoTab('nfa') },
+    { icon: '⭐', label: 'Go to Wishlist', kw: '', run: () => _gotoTab('wishlist') },
+    { icon: '🏢', label: 'Go to FFL Dealers', kw: 'ffl', run: () => _gotoTab('dealers') },
+    { icon: '📈', label: 'Custom Report', kw: 'export report builder', run: openReportBuilder },
+    { icon: '📓', label: 'ATF Bound Book', kw: 'export atf', run: exportATFBoundBook },
+    { icon: '📷', label: 'Scan Serial', kw: 'camera ocr', run: openCameraModal },
+    { icon: '📗', label: 'Export to Excel', kw: 'xlsx download', run: exportExcel },
+    { icon: '⬇️', label: 'Export JSON', kw: 'backup download', run: exportJSON },
+    { icon: '🔗', label: 'Share inventory', kw: 'insurance link', run: openShareModal },
+    { icon: '🖨️', label: 'Print', kw: '', run: printInventory },
+    { icon: '🔔', label: 'Reminders', kw: 'alerts', run: openReminders },
+    { icon: '⚙️', label: 'Settings', kw: 'password account', run: openSettingsModal },
+    { icon: '💾', label: 'Backup now', kw: '', run: manualBackup },
+    { icon: '🔄', label: 'Sync now', kw: 'cloud', run: () => CloudSync.syncNow() },
+    { icon: '🌓', label: 'Toggle dark mode', kw: 'theme light', run: toggleTheme }
+  ];
+}
+function cmdkBuild(q) {
+  q = (q || '').trim().toLowerCase();
+  const out = [];
+  if (q) {
+    (db.firearms || []).forEach(f => {
+      const hay = ((f.make || '') + ' ' + (f.model || '') + ' ' + (f.serial || '') + ' ' + (f.caliber || '') + ' ' + (f.nfaType || '')).toLowerCase();
+      if (hay.includes(q)) out.push({
+        icon: '🔫', label: ((f.make || '') + ' ' + (f.model || '')).trim() || 'Firearm',
+        hint: (f.caliber || '') + (f.serial ? ' · ' + f.serial : ''), run: () => openDetail(f.id)
+      });
+    });
+  }
+  let cmds = cmdkCommands();
+  if (q) cmds = cmds.filter(c => (c.label + ' ' + (c.kw || '')).toLowerCase().includes(q));
+  return out.slice(0, 6).concat(cmds).slice(0, 16);
+}
+function cmdkRender() {
+  const input = document.getElementById('cmdkInput');
+  cmdkItems = cmdkBuild(input ? input.value : '');
+  cmdkSel = 0;
+  const el = document.getElementById('cmdkResults');
+  if (!el) return;
+  if (!cmdkItems.length) { el.innerHTML = '<div class="cmdk-empty">No matches.</div>'; return; }
+  el.innerHTML = cmdkItems.map((it, i) =>
+    `<div class="cmdk-item${i === 0 ? ' sel' : ''}" data-i="${i}" onmouseenter="cmdkHover(${i})" onclick="cmdkExec(${i})">
+      <span class="cmdk-ico">${it.icon}</span><span class="cmdk-label">${esc(it.label)}</span>${it.hint ? '<span class="cmdk-hint">' + esc(it.hint) + '</span>' : ''}</div>`).join('');
+}
+function cmdkPaint() { document.querySelectorAll('#cmdkResults .cmdk-item').forEach((el, i) => el.classList.toggle('sel', i === cmdkSel)); }
+function cmdkHover(i) { cmdkSel = i; cmdkPaint(); }
+function cmdkMove(d) {
+  if (!cmdkItems.length) return;
+  cmdkSel = (cmdkSel + d + cmdkItems.length) % cmdkItems.length;
+  cmdkPaint();
+  const sel = document.querySelector('#cmdkResults .cmdk-item.sel');
+  if (sel) sel.scrollIntoView({ block: 'nearest' });
+}
+function cmdkExec(i) {
+  const it = cmdkItems[(i != null) ? i : cmdkSel];
+  closeCmdK();
+  if (it && it.run) { try { it.run(); } catch (e) { console.warn('cmdk run failed', e); } }
+}
+function openCmdK() {
+  const o = document.getElementById('cmdk'); if (!o) return;
+  o.style.display = 'flex';
+  const inp = document.getElementById('cmdkInput'); if (inp) inp.value = '';
+  cmdkRender();
+  setTimeout(() => { if (inp) inp.focus(); }, 30);
+}
+function closeCmdK() { const o = document.getElementById('cmdk'); if (o) o.style.display = 'none'; }
+window.openCmdK = openCmdK; window.closeCmdK = closeCmdK;
+window.cmdkRender = cmdkRender; window.cmdkExec = cmdkExec; window.cmdkHover = cmdkHover;
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); openCmdK(); return; }
+  const o = document.getElementById('cmdk');
+  if (!o || o.style.display === 'none') return;
+  if (e.key === 'Escape') { e.preventDefault(); closeCmdK(); }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); cmdkMove(1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); cmdkMove(-1); }
+  else if (e.key === 'Enter') { e.preventDefault(); cmdkExec(); }
+});
+
+// =====================================================
 // INDEXEDDB IMAGE STORAGE
 // =====================================================
 function openImageDB() {
