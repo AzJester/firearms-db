@@ -791,7 +791,7 @@ function updateStats() {
   document.getElementById('statAmmo').textContent = db.ammo.reduce((s, a) => s + (parseInt(a.quantity) || 0), 0).toLocaleString();
   const fVal = db.firearms.reduce((s, f) => s + (parseFloat(f.price) || 0), 0);
   const aVal = db.accessories.reduce((s, a) => s + (parseFloat(a.price) || 0), 0);
-  document.getElementById('statValue').textContent = '$' + (fVal + aVal).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  document.getElementById('statValue').textContent = money(fVal + aVal);
   updateCaliberFilter();
   updateTagFilter();
   document.getElementById('backupBtn').style.display = db.backups.length > 0 ? 'inline-block' : 'none';
@@ -1001,7 +1001,7 @@ function renderDashboard() {
   const totalAmmoRounds = db.ammo.reduce((s, a) => s + (parseInt(a.quantity) || 0), 0);
   const totalAmmoVal = db.ammo.reduce((s, a) => s + ((parseInt(a.quantity) || 0) * (parseFloat(a.pricePerRound) || 0)), 0);
   const totalInvested = totalVal + totalAmmoVal;
-  const fmt$ = n => '$' + Math.round(n || 0).toLocaleString();
+  const fmt$ = n => money(n);
   const note = m => '<div style="color:var(--text3);font-size:0.82rem;padding:8px;">' + m + '</div>';
   const barRow = (label, n, max, color) => '<div class="dash-bar-row"><span class="dash-bar-label">' + esc(label) +
     '</span><div class="dash-bar-track"><div class="dash-bar-fill" style="width:' + (n / max * 100).toFixed(1) + '%;background:' + color + ';"></div></div><span class="dash-bar-val">' + n + '</span></div>';
@@ -1132,7 +1132,7 @@ function renderDashboard() {
     if (calEntries.length) mk('calChartCanvas', { type: 'bar', data: { labels: calEntries.map(e => e[0]), datasets: [{ data: calEntries.map(e => e[1]), backgroundColor: '#10b981', borderRadius: 4 }] }, options: barOpts });
     if (makeEntries.length) mk('mfgChartCanvas', { type: 'bar', data: { labels: makeEntries.map(e => e[0]), datasets: [{ data: makeEntries.map(e => e[1]), backgroundColor: '#8b5cf6', borderRadius: 4 }] }, options: barOpts });
     if (hasValueChart) mk('valueChartCanvas', { type: 'line', data: { labels: hist.map(h => h.date), datasets: [{ label: 'Value', data: hist.map(h => h.value), borderColor: accent, backgroundColor: accent + '22', fill: true, tension: 0.3, pointRadius: hist.length > 30 ? 0 : 3, borderWidth: 2 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => '$' + Number(c.parsed.y).toLocaleString() } } }, scales: { x: { grid: { color: gridc }, ticks: { color: textc, maxTicksLimit: 8 } }, y: { grid: { color: gridc }, ticks: { color: textc, callback: v => '$' + Number(v).toLocaleString() } } } } });
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => money(c.parsed.y) } } }, scales: { x: { grid: { color: gridc }, ticks: { color: textc, maxTicksLimit: 8 } }, y: { grid: { color: gridc }, ticks: { color: textc, callback: v => '$' + Number(v).toLocaleString() } } } } });
   }
 }
 
@@ -1301,7 +1301,7 @@ function renderCards(items) {
       const c = f.stampStatus==='Approved'?'stamp-approved':f.stampStatus==='Pending'?'stamp-pending':'stamp-submitted';
       stamp = `<div class="stamp-badge ${c}">${esc(f.stampStatus)}</div>`;
     }
-    const p = f.price ? '$'+parseFloat(f.price).toLocaleString() : '--';
+    const p = f.price ? money(f.price) : '--';
     const disposed = (f.status && f.status !== 'Active') ? ' disposed' : '';
     const tags = (f.tags && f.tags.length > 0) ? `<div class="card-tags">${f.tags.map(t => `<span class="tag-pill">${esc(t)}</span>`).join('')}</div>` : '';
     const checked = bulkSelected.has(f.id) ? 'checked' : '';
@@ -1327,12 +1327,12 @@ function renderTable(items) {
   items.forEach(f => {
     const tsrc = f.images && f.images.length > 0 ? (thumbCache[f.images[0]] || imagesDb[f.images[0]]) : null;
     const im = tsrc?`<img class="thumb" loading="lazy" src="${tsrc}">` : `<span class="thumb-placeholder">&#10022;</span>`;
-    const pr = f.price?'$'+parseFloat(f.price).toLocaleString():'--';
+    const pr = f.price?money(f.price):'--';
     let nfa='';
     if(f.isNFA){nfa=`<span class="nfa-tag">${esc(f.nfaType||'NFA')}</span>`;if(f.stampStatus){const c=f.stampStatus==='Approved'?'approved':f.stampStatus==='Pending'?'pending':'submitted';nfa+=` <span class="stamp-tag ${c}">${esc(f.stampStatus)}</span>`;}}
     const status = f.status && f.status !== 'Active' ? `<span class="nfa-tag disposed-tag">${esc(f.status)}</span>` : '';
     const pl = getProfitLoss(f);
-    const plStr = pl !== null ? ` <span class="${pl>=0?'profit':'loss'}">$${Math.abs(pl).toLocaleString()} ${pl>=0?'+':'-'}</span>` : '';
+    const plStr = pl !== null ? ` <span class="${pl>=0?'profit':'loss'}">${money(Math.abs(pl))} ${pl>=0?'+':'-'}</span>` : '';
     const tags = (f.tags && f.tags.length > 0) ? f.tags.map(t => `<span class="tag-pill">${esc(t)}</span>`).join(' ') : '';
     h+=`<tr onclick="openDetail('${f.id}')" style="cursor:pointer"><td><input type="checkbox" class="card-checkbox table-cb" ${bulkSelected.has(f.id)?'checked':''} onclick="toggleBulkSelect('${f.id}',event)"></td><td>${im}</td><td>${esc(f.make||'--')}</td><td>${esc(f.model||'--')}</td><td>${esc(f.serial||'--')}</td><td>${esc(f.caliber||'--')}</td><td>${esc(f.type||'--')}</td><td>${esc(f.barrel||'--')}</td><td>${esc(f.condition||'--')}</td><td>${pr}</td><td>${fmtDate(f.dateAcquired)}</td><td>${status}${plStr}</td><td>${nfa}</td><td>${tags}</td></tr>`;
   });
@@ -1354,6 +1354,8 @@ function tabEmpty(icon, title, sub, actionHtml) {
     (sub ? '<p>' + esc(sub) + '</p>' : '') + (actionHtml || '') + '</div>';
 }
 function fmtDate(d) { if(!d) return '--'; const p=d.split('-'); if(p.length!==3) return d; return p[1]+'/'+p[2]+'/'+p[0]; }
+// Currency: always two decimals, e.g. money(1088.3) -> "$1,088.30".
+function money(n) { return '$' + (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
 // ---- Styled in-app dialogs (replace native confirm()/prompt()) ----------
 // Returns a Promise: confirmDialog -> boolean; promptDialog -> string|null.
@@ -1949,7 +1951,7 @@ function renderAccessoriesTab() {
   h += '<table class="data-table"><thead><tr><th>Name</th><th>Category</th><th>Brand</th><th>Model / Part #</th><th>Assigned To</th><th>Condition</th><th>Price</th><th>Date</th><th>Receipt</th><th></th></tr></thead><tbody>';
   items.forEach(a => {
     const firearmLabel = getFirearmLabel(a.firearmId);
-    const pr = a.price ? '$' + parseFloat(a.price).toLocaleString() : '--';
+    const pr = a.price ? money(a.price) : '--';
     const hasReceipt = a.receipt ? true : false;
     h += `<tr style="cursor:pointer;" onclick="openAccessoryModal('${a.id}')">
       <td style="font-weight:600;">${esc(a.name||'--')}</td>
@@ -2022,7 +2024,7 @@ function openDetail(id) {
     } else { ic.innerHTML=`<div class="detail-img-placeholder">&#10022;</div>`; }
   } else { ic.innerHTML=`<div class="detail-img-placeholder">&#10022;</div>`; }
 
-  const pr=f.price?'$'+parseFloat(f.price).toLocaleString():'--';
+  const pr=f.price?money(f.price):'--';
   const dt=fmtDate(f.dateAcquired);
 
   // Tags display
@@ -2073,13 +2075,13 @@ function openDetail(id) {
   const buildTotal = firearmPrice + accTotal;
   const addBuildBtn = `<button class="btn btn-small btn-primary" onclick="event.stopPropagation(); closeDetail(); openAccessoryModal(); setTimeout(function(){var s=document.getElementById('accFirearm'); if(s) s.value='${f.id}';}, 60);">+ Add to build</button>`;
   const buildHeader = `<div class="build-summary">
-      <div><div class="build-summary-label">Total build value</div><div class="build-summary-value">$${buildTotal.toLocaleString()}</div></div>
-      <div class="build-summary-meta">Firearm $${firearmPrice.toLocaleString()} &nbsp;+&nbsp; ${assignedAcc.length} part${assignedAcc.length===1?'':'s'} $${accTotal.toLocaleString()}</div>
+      <div><div class="build-summary-label">Total build value</div><div class="build-summary-value">${money(buildTotal)}</div></div>
+      <div class="build-summary-meta">Firearm ${money(firearmPrice)} &nbsp;+&nbsp; ${assignedAcc.length} part${assignedAcc.length===1?'':'s'} ${money(accTotal)}</div>
     </div>`;
   if (assignedAcc.length > 0) {
     accessoriesH = '<div class="detail-section"><h3 style="display:flex;justify-content:space-between;align-items:center;gap:10px;">Build / Loadout (' + assignedAcc.length + ' parts) ' + addBuildBtn + '</h3>' + buildHeader + '<div style="display: flex; flex-direction: column; gap: 8px;">';
     assignedAcc.slice().sort((a,b)=>(a.category||'').localeCompare(b.category||'')).forEach(a => {
-      const apr = a.price ? '$' + parseFloat(a.price).toLocaleString() : '';
+      const apr = a.price ? money(a.price) : '';
       accessoriesH += `<div style="padding: 10px; background: var(--bg3); border-radius: 6px; border-left: 3px solid var(--blue); display: flex; justify-content: space-between; align-items: center;">
         <div><div style="font-weight: 600; margin-bottom: 2px;">${esc(a.name)}</div>
           <div style="font-size: 0.8rem; color: var(--text2);"><span style="padding:2px 6px;background:var(--bg2);border-radius:3px;margin-right:6px;">${esc(a.category||'')}</span>${a.brand ? esc(a.brand) : ''}${a.model ? ' ' + esc(a.model) : ''}${apr ? ' &middot; ' + apr : ''}</div>
@@ -2114,10 +2116,10 @@ function openDetail(id) {
       <div class="detail-field"><label>Status</label><span>${esc(f.status)}</span></div>
       ${f.dispDate ? `<div class="detail-field"><label>Date</label><span>${fmtDate(f.dispDate)}</span></div>` : ''}
       ${f.dispBuyer ? `<div class="detail-field"><label>Buyer</label><span>${esc(f.dispBuyer)}</span></div>` : ''}
-      ${f.dispPrice ? `<div class="detail-field"><label>Sale Price</label><span>$${parseFloat(f.dispPrice).toLocaleString()}</span></div>` : ''}
+      ${f.dispPrice ? `<div class="detail-field"><label>Sale Price</label><span>${money(f.dispPrice)}</span></div>` : ''}
       ${f.dispFFL ? `<div class="detail-field"><label>FFL Dealer</label><span>${esc(f.dispFFL)}</span></div>` : ''}
       ${rteShow(f.dispNotes) ? `<div class="detail-field" style="grid-column: 1/-1;"><label>Notes</label><span class="rte-display">${f.dispNotes}</span></div>` : ''}
-      ${(()=>{ const pl = getProfitLoss(f); return pl !== null ? '<div class="detail-field"><label>Profit/Loss</label><span class="'+(pl>=0?'profit':'loss')+'">$'+Math.abs(pl).toLocaleString()+' '+(pl>=0?'Gain':'Loss')+'</span></div>' : ''; })()}
+      ${(()=>{ const pl = getProfitLoss(f); return pl !== null ? '<div class="detail-field"><label>Profit/Loss</label><span class="'+(pl>=0?'profit':'loss')+'">'+money(Math.abs(pl))+' '+(pl>=0?'Gain':'Loss')+'</span></div>' : ''; })()}
     </div></div>`;
   }
 
@@ -2160,7 +2162,7 @@ function openDetail(id) {
       <div class="detail-field"><label>Purchase Price</label><span>${pr}</span></div>
       <div class="detail-field"><label>Condition</label><span>${esc(f.condition||'--')}</span></div>
       <div class="detail-field"><label>Round Count</label><span>${f.roundCount||0}</span></div>
-      <div class="detail-field"><label>Total Invested</label><span class="investment-badge">$${getTotalInvestment(f.id).toLocaleString()}</span></div>
+      <div class="detail-field"><label>Total Invested</label><span class="investment-badge">${money(getTotalInvestment(f.id))}</span></div>
       ${f.warrantyExp ? '<div class="detail-field"><label>Warranty</label><span class="warranty-'+getWarrantyStatus(f.warrantyExp)+'">'+(getWarrantyStatus(f.warrantyExp)==='expired'?'EXPIRED':getWarrantyStatus(f.warrantyExp)==='soon'?'Expiring Soon':fmtDate(f.warrantyExp))+'</span></div>' : ''}
     </div>${(f.customFields&&f.customFields.length>0)?'<div class="detail-section"><h3>Custom Fields</h3><div class="detail-grid">'+f.customFields.map(cf=>'<div class="detail-field"><label>'+esc(cf.name)+'</label><span>'+esc(cf.value)+'</span></div>').join('')+'</div></div>':''}${tagsH?'':''}${notesH}${receiptH}${docsH}${dispositionH}${nfaH}${compatAmmo}${accessoriesH}${maintenanceH}`;
 
@@ -2207,7 +2209,7 @@ async function exportInsuranceReport() {
   const doc = new jsPDF();
   doc.setFontSize(16); doc.text('Personal Firearms Inventory Report', 14, 15);
   doc.setFontSize(10); doc.text('Generated: ' + new Date().toLocaleString(), 14, 25);
-  const rows = db.firearms.map(f => [f.make + ' ' + f.model, f.serial || '--', f.caliber || '--', f.type || '--', fmtDate(f.dateAcquired), f.price ? '$' + parseFloat(f.price).toLocaleString() : '--', f.condition || '--']);
+  const rows = db.firearms.map(f => [f.make + ' ' + f.model, f.serial || '--', f.caliber || '--', f.type || '--', fmtDate(f.dateAcquired), f.price ? money(f.price) : '--', f.condition || '--']);
   doc.autoTable({ head: [['Make/Model', 'Serial #', 'Caliber', 'Type', 'Acquired', 'Price', 'Condition']], body: rows, startY: 35, theme: 'grid' });
   let finalY = doc.lastAutoTable.finalY + 10;
   const totalValue = db.firearms.reduce((s, f) => s + (parseFloat(f.price) || 0), 0);
@@ -2485,15 +2487,15 @@ function renderWishlistTab() {
   document.getElementById('emptyState').style.display = 'none';
   const items = db.wishlist || [];
   const totalTarget = items.reduce((s, w) => s + (parseFloat(w.price) || 0), 0);
-  let h = '<div style="padding:16px 24px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.86rem;font-weight:600;"><span>Wishlist Items: <span style="color:var(--accent);">' + items.length + '</span></span><span>Target Budget: <span style="color:var(--accent);">$' + totalTarget.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span></span></div>';
+  let h = '<div style="padding:16px 24px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.86rem;font-weight:600;"><span>Wishlist Items: <span style="color:var(--accent);">' + items.length + '</span></span><span>Target Budget: <span style="color:var(--accent);">' + money(totalTarget) + '</span></span></div>';
   if (items.length === 0) { h += tabEmpty('⭐', 'Your wishlist is empty', 'Track guns you want, set a target price and priority, then move them to your collection when you buy.', '<button class="btn btn-primary" onclick="openWishlistModal()">+ Add Wishlist Item</button>'); document.getElementById('tableContainer').innerHTML = h; return; }
 
   // Budget split + counts by priority
   const byP = { high: 0, medium: 0, low: 0 }, cnt = { high: 0, medium: 0, low: 0 };
   items.forEach(w => { const p = _wishPrio(w); byP[p] += parseFloat(w.price) || 0; cnt[p]++; });
   if (totalTarget > 0) {
-    const seg = (p, c) => byP[p] > 0 ? '<span style="width:' + (byP[p] / totalTarget * 100).toFixed(1) + '%;background:' + c + ';" title="' + p + ': $' + byP[p].toLocaleString() + '"></span>' : '';
-    const leg = (p, c, label) => '<span><i style="background:' + c + '"></i>' + label + ' $' + byP[p].toLocaleString() + '</span>';
+    const seg = (p, c) => byP[p] > 0 ? '<span style="width:' + (byP[p] / totalTarget * 100).toFixed(1) + '%;background:' + c + ';" title="' + p + ': ' + money(byP[p]) + '"></span>' : '';
+    const leg = (p, c, label) => '<span><i style="background:' + c + '"></i>' + label + ' ' + money(byP[p]) + '</span>';
     h += '<div class="wish-budget"><div class="wish-budget-bar">' + seg('high', 'var(--red)') + seg('medium', '#d9a400') + seg('low', 'var(--green)') + '</div>'
       + '<div class="wish-budget-legend">' + leg('high', 'var(--red)', 'High') + leg('medium', '#d9a400', 'Medium') + leg('low', 'var(--green)', 'Low') + '</div></div>';
   }
@@ -2508,7 +2510,7 @@ function renderWishlistTab() {
 
   h += '<table class="data-table"><thead><tr><th>Priority</th><th>Make</th><th>Model</th><th>Caliber</th><th>Type</th><th>Target Price</th><th>Dealer</th><th>Added</th><th></th></tr></thead><tbody>';
   rows.forEach(w => {
-    const pr = w.price ? '$'+parseFloat(w.price).toLocaleString() : '--';
+    const pr = w.price ? money(w.price) : '--';
     h += '<tr style="cursor:pointer;" onclick="openWishlistModal(\''+w.id+'\')">';
     h += '<td><button class="wishlist-priority '+_wishPrio(w)+'" title="Click to change priority" aria-label="Priority: '+_wishPrio(w)+' (click to change)" onclick="event.stopPropagation();cycleWishlistPriority(\''+w.id+'\')">'+_wishPrio(w).toUpperCase()+'</button></td>';
     h += '<td>'+esc(w.make||'--')+'</td><td>'+esc(w.model||'--')+'</td><td>'+esc(w.caliber||'--')+'</td><td>'+esc(w.type||'--')+'</td><td>'+pr+'</td>';
@@ -3128,7 +3130,7 @@ function generateCustomReport() {
     const body = firearms.map(f => fields.map(fld => {
       if (fld.key === 'tags') return (f.tags||[]).join(', ');
       if (fld.key === 'notes') return (f.notes||'').replace(/<[^>]*>/g,'').substring(0,60);
-      if (fld.key === 'price') return f.price ? '$'+parseFloat(f.price).toLocaleString() : '--';
+      if (fld.key === 'price') return f.price ? money(f.price) : '--';
       if (fld.key === 'dateAcquired') return fmtDate(f.dateAcquired);
       return f[fld.key] || '--';
     }));
@@ -3136,7 +3138,7 @@ function generateCustomReport() {
     let fy = doc.lastAutoTable.finalY + 10;
     const totalVal = firearms.reduce((s,f)=>s+(parseFloat(f.price)||0),0);
     doc.setFontSize(11); doc.setFont(undefined,'bold');
-    doc.text('Total Value: $'+totalVal.toLocaleString('en-US',{minimumFractionDigits:2}), 14, fy);
+    doc.text('Total Value: '+money(totalVal), 14, fy);
     doc.save(title.replace(/\s+/g,'_') + '_' + new Date().toISOString().slice(0,10) + '.pdf');
   }
   closeReportBuilder();
@@ -3155,7 +3157,7 @@ function exportATFBoundBook() {
     const disp = f.status && f.status !== 'Active' ? fmtDate(f.dispDate) : '';
     const buyer = f.status && f.status !== 'Active' ? (f.dispBuyer||'') : '';
     const ffl = f.status && f.status !== 'Active' ? (f.dispFFL||'') : '';
-    return [f.make||'', f.model||'', f.serial||'', f.caliber||'', f.type||'', acq, f.price?'$'+parseFloat(f.price).toLocaleString():'', f.condition||'', f.status||'Active', disp, buyer, ffl];
+    return [f.make||'', f.model||'', f.serial||'', f.caliber||'', f.type||'', acq, f.price?money(f.price):'', f.condition||'', f.status||'Active', disp, buyer, ffl];
   });
   doc.autoTable({
     head: [['Manufacturer','Model','Serial Number','Caliber','Type','Date Acquired','Price','Condition','Status','Date Disposed','Transferee','FFL Dealer']],
