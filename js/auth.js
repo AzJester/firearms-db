@@ -91,9 +91,9 @@
         const res = await CloudSync.restoreFromFile(file);
         status.textContent = '';
         document.getElementById('firstRunPanel').style.display = 'none';
-        alert('Imported & synced to the cloud:\n' +
-              res.firearms + ' firearms, ' + res.ammo + ' ammo, ' +
-              res.accessories + ' accessories, ' + res.images + ' photos.');
+        toast('Imported ' + res.firearms + ' firearms, ' + res.ammo + ' ammo, ' +
+              res.accessories + ' accessories, ' + res.images + ' photos.\n' +
+              'Photos are uploading to the cloud in the background.', 'success');
       } catch (err) {
         status.textContent = 'Import failed: ' + err.message;
       }
@@ -117,12 +117,13 @@
       try {
         if (window.toast) toast('Restoring from backup… uploading photos in the background.', 'info', 6000);
         const res = await CloudSync.restoreFromFile(file);
-        const msg = 'Restored & synced: ' + res.firearms + ' firearms, ' + res.ammo + ' ammo, ' +
-                    res.accessories + ' accessories, ' + res.images + ' photos.';
-        if (window.toast) toast(msg, 'success', 6000); else alert(msg);
+        const msg = 'Restored ' + res.firearms + ' firearms, ' + res.ammo + ' ammo, ' +
+                    res.accessories + ' accessories, ' + res.images + ' photos.\n' +
+                    'Photos are uploading to the cloud — watch the status pill.';
+        toast(msg, 'success', 6000);
       } catch (err) {
         if (window.toast) toast('Restore failed: ' + err.message, 'error', 8000);
-        else alert('Restore failed: ' + err.message);
+        else toast('Restore failed: ' + err.message);
       }
     });
   }

@@ -316,9 +316,14 @@ const CloudSync = {
     this.ready = true;
     if (typeof updateStats === 'function') updateStats();
     if (typeof render === 'function') render();
-    this.setStatus('Uploading…', 'syncing');
-    await this.push();   // upload everything to the cloud
     await this.cacheLocal();
+    // Upload to the cloud in the background so the UI is not blocked while
+    // large photos/PDFs transfer. Progress shows in the sync pill.
+    this.setStatus('Uploading…', 'syncing');
+    this.push().catch(e => {
+      console.error('Background upload after restore failed', e);
+      if (window.toast) toast('Cloud upload error — it will retry automatically.', 'error');
+    });
     return { firearms: db.firearms.length, ammo: db.ammo.length, accessories: db.accessories.length, images: Object.keys(imgs).length };
   }
 };

@@ -54,7 +54,9 @@
 /* ===== RESET & BASE ===== */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   background: var(--bg3);
   color: var(--text);
   min-height: 100vh;
@@ -266,17 +268,19 @@ select.filter-select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px 
 .card {
   background: var(--card-bg);
   border: 1px solid var(--border-light);
-  border-radius: 8px;
+  border-radius: 14px;
   overflow: hidden;
-  transition: transform 0.12s, box-shadow 0.12s;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   cursor: pointer;
   position: relative;
   box-shadow: var(--shadow);
 }
 .card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
   box-shadow: var(--shadow-hover);
+  border-color: var(--accent);
 }
+.card:hover .card-img { transform: scale(1.05); }
 .card.disposed { opacity: 0.6; }
 .card-img {
   width: 100%;
@@ -284,6 +288,7 @@ select.filter-select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px 
   object-fit: cover;
   background: var(--bg3);
   display: block;
+  transition: transform 0.4s ease;
 }
 .card-img-placeholder {
   width: 100%;
@@ -309,8 +314,9 @@ select.filter-select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px 
   gap: 5px;
   font-size: 0.76rem;
 }
-.card-detail label { color: var(--text3); font-weight: 500; }
-.card-detail span { color: var(--text); font-weight: 600; }
+.card-detail { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.card-detail label { color: var(--text3); font-weight: 600; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.card-detail span { color: var(--text); font-weight: 600; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card-tags {
   display: flex;
   gap: 4px;
@@ -1319,3 +1325,24 @@ table.data-table .thumb-placeholder {
 .sync-pill[data-kind="syncing"] { background: var(--yellow-bg); color: var(--yellow); }
 .sync-pill[data-kind="error"]   { background: var(--red-light); color: var(--red); }
 .authed-email { color: var(--text3); font-size: 0.74rem; }
+
+/* ===== TOAST NOTIFICATIONS (v2.1) ===== */
+.toast-host { position: fixed; bottom: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; max-width: min(380px, calc(100vw - 32px)); }
+.toast { display: flex; align-items: flex-start; gap: 10px; background: var(--card-bg); color: var(--text); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 10px; box-shadow: var(--shadow-hover); padding: 12px 14px; font-size: 0.86rem; line-height: 1.35; white-space: pre-line; animation: toastIn 0.22s ease both; }
+.toast.hide { animation: toastOut 0.2s ease both; }
+.toast .toast-icon { font-size: 1rem; line-height: 1.2; }
+.toast.success { border-left-color: var(--green); } .toast.success .toast-icon { color: var(--green); }
+.toast.error { border-left-color: var(--red); } .toast.error .toast-icon { color: var(--red); }
+.toast.info { border-left-color: var(--blue); }
+.toast .toast-msg { flex: 1; min-width: 0; }
+.toast .toast-close { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 0 2px; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(8px) scale(0.98); } }
+@media (max-width: 600px) { .toast-host { left: 16px; right: 16px; bottom: 16px; max-width: none; } }
+
+/* ===== GLOBAL POLISH (v2.1) ===== */
+.btn { border-radius: 8px; transition: transform 0.08s ease, filter 0.15s ease, background 0.15s ease; }
+.btn:active { transform: translateY(1px); }
+.btn-primary:hover, .btn-secondary:hover { filter: brightness(1.08); }
+.search-box:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+.tab { transition: color 0.15s ease, border-color 0.15s ease; }
