@@ -1403,3 +1403,12 @@ table.data-table .thumb-placeholder {
 .doc-chip-x:hover { color: var(--red); }
 .doc-open { font-size: 0.76rem; font-weight: 600; color: var(--accent); text-decoration: none; padding: 3px 8px; border: 1px solid var(--border); border-radius: 6px; }
 .doc-open:hover { background: var(--bg2); }
+
+/* ===== SHARE LINKS (v2.7) ===== */
+.share-list { display: flex; flex-direction: column; gap: 8px; }
+.share-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--bg2); flex-wrap: wrap; }
+.share-row-info { flex: 1; min-width: 0; }
+.share-row-label { font-weight: 600; font-size: 0.84rem; }
+.share-row-meta { font-size: 0.72rem; color: var(--text3); }
+.share-url { font-family: monospace; font-size: 0.72rem; color: var(--text2); word-break: break-all; }
+.share-result-box { background: var(--green-bg); border: 1px solid var(--green); border-radius: 8px; padding: 12px; margin-top: 8px; }

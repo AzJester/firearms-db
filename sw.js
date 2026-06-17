@@ -2,7 +2,7 @@
 // users always get the latest code, and offline users still get the app.
 // Cross-origin requests (Supabase API/Storage, CDN libraries) are never
 // intercepted — they always go straight to the network.
-const CACHE = 'firearms-db-v8';
+const CACHE = 'firearms-db-v9';
 const SHELL = [
   './',
   './index.html',
@@ -12,6 +12,8 @@ const SHELL = [
   './js/app.js',
   './js/cloud-sync.js',
   './js/auth.js',
+  './js/share.js',
+  './share.html',
   './manifest.webmanifest',
   './icons/icon.svg',
   './icons/icon-192.png',
