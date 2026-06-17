@@ -17,6 +17,23 @@
     errEl.textContent = msg || '';
     errEl.style.display = msg ? 'block' : 'none';
   }
+
+  // Turn a Supabase/network error into a readable sentence (never "{}").
+  function prettyError(error) {
+    if (!error) return 'Sign in failed. Please try again.';
+    let m = (error.message || error.error_description || error.msg || '').trim();
+    if (m === '{}' || m === '[object Object]') m = '';
+    const status = error.status;
+    const code = (error.code || error.error || '').toString();
+    if (/invalid login credentials/i.test(m) || code === 'invalid_credentials')
+      return 'Incorrect email or password.';
+    if (/email not confirmed/i.test(m))
+      return 'This email has not been confirmed yet.';
+    if (/failed to fetch|networkerror|load failed|fetch/i.test(m))
+      return "Can't reach the server — check your internet connection and try again.";
+    if (m) return m;
+    return 'Sign in failed' + (status ? ' (error ' + status + ')' : '') + '. Please try again.';
+  }
   function busy(on) {
     submitBtn.disabled = on;
     submitBtn.textContent = on ? 'Signing in…' : 'Sign In';
@@ -53,10 +70,10 @@
           email: emailEl.value.trim(),
           password: pwEl.value
         });
-        if (error) { showError(error.message); busy(false); return; }
+        if (error) { showError(prettyError(error)); busy(false); return; }
         await startApp(data.session);
       } catch (err) {
-        showError(err.message || 'Sign in failed.');
+        showError(prettyError(err));
         busy(false);
       }
     });
