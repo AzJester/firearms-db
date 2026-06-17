@@ -6,7 +6,7 @@
 // Update flow: a new worker does NOT skip waiting on its own. It waits until
 // the page tells it to (postMessage 'SKIP_WAITING' from the "Reload" banner),
 // then activates and claims clients so the page can reload onto fresh code.
-const CACHE = 'firearms-db-v31';
+const CACHE = 'firearms-db-v32';
 const SHELL = [
   './',
   './index.html',

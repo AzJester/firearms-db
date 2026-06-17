@@ -1356,6 +1356,14 @@ function tabEmpty(icon, title, sub, actionHtml) {
 function fmtDate(d) { if(!d) return '--'; const p=d.split('-'); if(p.length!==3) return d; return p[1]+'/'+p[2]+'/'+p[0]; }
 // Currency: always two decimals, e.g. money(1088.3) -> "$1,088.30".
 function money(n) { return '$' + (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+// Normalize a user-entered URL for use in href: only allow http(s)/mailto;
+// schemeless input gets https:// prepended; anything else (e.g. javascript:) is neutralized.
+function safeHref(u) {
+  const s = (u == null ? '' : String(u)).trim();
+  if (!s) return '#';
+  if (/^(https?:|mailto:)/i.test(s)) return s;
+  return 'https://' + s.replace(/^\/+/, '');
+}
 
 // ---- Styled in-app dialogs (replace native confirm()/prompt()) ----------
 // Returns a Promise: confirmDialog -> boolean; promptDialog -> string|null.
@@ -2164,7 +2172,7 @@ function openDetail(id) {
       <div class="detail-field"><label>Round Count</label><span>${f.roundCount||0}</span></div>
       <div class="detail-field"><label>Total Invested</label><span class="investment-badge">${money(getTotalInvestment(f.id))}</span></div>
       ${f.warrantyExp ? '<div class="detail-field"><label>Warranty</label><span class="warranty-'+getWarrantyStatus(f.warrantyExp)+'">'+(getWarrantyStatus(f.warrantyExp)==='expired'?'EXPIRED':getWarrantyStatus(f.warrantyExp)==='soon'?'Expiring Soon':fmtDate(f.warrantyExp))+'</span></div>' : ''}
-    </div>${(f.customFields&&f.customFields.length>0)?'<div class="detail-section"><h3>Custom Fields</h3><div class="detail-grid">'+f.customFields.map(cf=>'<div class="detail-field"><label>'+esc(cf.name)+'</label><span>'+esc(cf.value)+'</span></div>').join('')+'</div></div>':''}${tagsH?'':''}${notesH}${receiptH}${docsH}${dispositionH}${nfaH}${compatAmmo}${accessoriesH}${maintenanceH}`;
+    </div>${(f.customFields&&f.customFields.length>0)?'<div class="detail-section"><h3>Custom Fields</h3><div class="detail-grid">'+f.customFields.map(cf=>'<div class="detail-field"><label>'+esc(cf.name)+'</label><span>'+esc(cf.value)+'</span></div>').join('')+'</div></div>':''}${notesH}${receiptH}${docsH}${dispositionH}${nfaH}${compatAmmo}${accessoriesH}${maintenanceH}`;
 
   currentImageIndex = 0;
   document.getElementById('detailQRBtn').onclick=()=>{generateQR(id);};
@@ -2345,11 +2353,11 @@ document.addEventListener('keydown',e=>{
   const key = e.key.toLowerCase();
   if (key === 'n') { e.preventDefault(); if (currentTab === 'wishlist') openWishlistModal(); else if (currentTab === 'dealers') openDealerModal(); else if (currentTab === 'ammo') openAddAmmoModal(); else if (currentTab === 'accessories') openAccessoryModal(); else openAddModal(); }
   else if (key === '/') { e.preventDefault(); document.getElementById('searchBox').focus(); }
-  else if (key === 'd') { e.preventDefault(); document.querySelector('[data-tab="dashboard"]').click(); }
+  else if (key === 'd') { e.preventDefault(); const t = document.querySelector('[data-tab="dashboard"]'); if (t) t.click(); }
   else if (key === 'v') { e.preventDefault(); setView(currentView === 'cards' ? 'table' : 'cards'); }
   else if (key === 'b') { e.preventDefault(); manualBackup(); }
   else if (key === 'p') { e.preventDefault(); printInventory(); }
-  else if (key === '?' || key === '/') { e.preventDefault(); showShortcutsHelp(); }
+  else if (key === '?') { e.preventDefault(); showShortcutsHelp(); }
   else if (key >= '1' && key <= '7') {
     e.preventDefault();
     const tabs = document.querySelectorAll('.tab');
@@ -2514,7 +2522,7 @@ function renderWishlistTab() {
     h += '<tr style="cursor:pointer;" onclick="openWishlistModal(\''+w.id+'\')">';
     h += '<td><button class="wishlist-priority '+_wishPrio(w)+'" title="Click to change priority" aria-label="Priority: '+_wishPrio(w)+' (click to change)" onclick="event.stopPropagation();cycleWishlistPriority(\''+w.id+'\')">'+_wishPrio(w).toUpperCase()+'</button></td>';
     h += '<td>'+esc(w.make||'--')+'</td><td>'+esc(w.model||'--')+'</td><td>'+esc(w.caliber||'--')+'</td><td>'+esc(w.type||'--')+'</td><td>'+pr+'</td>';
-    h += '<td>'+(w.url?'<a href="'+esc(w.url)+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);">'+esc(w.dealer||'Link')+'</a>':esc(w.dealer||'--'))+'</td>';
+    h += '<td>'+(w.url?'<a href="'+escAttr(safeHref(w.url))+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);">'+esc(w.dealer||'Link')+'</a>':esc(w.dealer||'--'))+'</td>';
     h += '<td>'+fmtDate(w.dateAdded)+'</td>';
     h += '<td style="text-align:right;white-space:nowrap;"><button class="btn btn-small btn-primary" onclick="event.stopPropagation();moveWishlistToCollection(\''+w.id+'\')">Buy</button> <button class="btn btn-small btn-danger" onclick="event.stopPropagation();deleteWishlistItem(\''+w.id+'\')">Del</button></td></tr>';
     if (rteShow(w.notes)) h += '<tr class="wishlist-note-row" style="cursor:pointer;" onclick="openWishlistModal(\''+w.id+'\')"><td colspan="9"><div class="rte-display wishlist-note">' + w.notes + '</div></td></tr>';
@@ -2810,7 +2818,7 @@ function renderDealersTab() {
     if (d.phone) h += '<div class="ffl-detail">Phone: ' + esc(d.phone) + '</div>';
     if (d.email) h += '<div class="ffl-detail">Email: ' + esc(d.email) + '</div>';
     if (d.address) h += '<div class="ffl-detail">' + esc(d.address) + '</div>';
-    if (d.website) h += '<div class="ffl-detail"><a href="' + esc(d.website) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);">Website</a></div>';
+    if (d.website) h += '<div class="ffl-detail"><a href="' + escAttr(safeHref(d.website)) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);">Website</a></div>';
     if (d.notes && d.notes !== '<br>') h += '<div class="ffl-detail dealer-notes">' + d.notes + '</div>';
     h += '</div>';
   });
@@ -3400,7 +3408,7 @@ function deleteWithUndo(type, id) {
 
   // Show undo toast
   const toast = document.getElementById('undoToast');
-  document.getElementById('undoMessage').textContent = esc(name) + ' deleted';
+  document.getElementById('undoMessage').textContent = name + ' deleted';
   toast.style.display = 'flex';
   // Reset animation
   const bar = toast.querySelector('.undo-timer-bar');
