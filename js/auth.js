@@ -105,6 +105,28 @@
     document.getElementById('firstRunPanel').style.display = 'none';
   });
 
+  // ---- "Restore from File" toolbar button (full replace, works any time) ----
+  const restoreInput = document.getElementById('restoreFile');
+  if (restoreInput) {
+    restoreInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      e.target.value = '';
+      if (!file) return;
+      if (!confirm('Replace your ENTIRE current collection with the contents of "' + file.name +
+                   '"?\n\nThis overwrites what is in the cloud now. (Tip: use "Save to File" first if you want a safety copy.)')) return;
+      try {
+        if (window.toast) toast('Restoring from backup… uploading photos in the background.', 'info', 6000);
+        const res = await CloudSync.restoreFromFile(file);
+        const msg = 'Restored & synced: ' + res.firearms + ' firearms, ' + res.ammo + ' ammo, ' +
+                    res.accessories + ' accessories, ' + res.images + ' photos.';
+        if (window.toast) toast(msg, 'success', 6000); else alert(msg);
+      } catch (err) {
+        if (window.toast) toast('Restore failed: ' + err.message, 'error', 8000);
+        else alert('Restore failed: ' + err.message);
+      }
+    });
+  }
+
   // ---- sign out (exposed for the toolbar button) ----
   window.Auth = {
     async signOut() {
