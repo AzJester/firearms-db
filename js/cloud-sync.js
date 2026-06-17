@@ -15,6 +15,7 @@ const CloudSync = {
   ready: false,
   uid: null,
   hasCloudData: false,
+  serverUpdatedAt: null,
   syncedHashes: {},      // media key -> hash currently in the cloud
   pushTimer: null,
   pushing: false,
@@ -146,9 +147,10 @@ const CloudSync = {
     let cloud = null;
     try {
       const { data: row, error } = await sb
-        .from('collections').select('data').eq('user_id', this.uid).maybeSingle();
+        .from('collections').select('data, updated_at').eq('user_id', this.uid).maybeSingle();
       if (error) throw error;
       cloud = row && row.data;
+      this.serverUpdatedAt = row ? row.updated_at : null;
     } catch (e) {
       console.warn('Cloud read failed — using local copy (offline?).', e);
       try { Object.assign(imagesDb, (await idbGetAll()) || {}); } catch (_) {}
@@ -212,11 +214,30 @@ const CloudSync = {
     this.setStatus('Saving…', 'syncing');
     const sb = window.sbClient;
     try {
+      // Conflict check: did another device change the cloud since we last synced?
+      try {
+        const { data: cur } = await sb.from('collections')
+          .select('updated_at').eq('user_id', this.uid).maybeSingle();
+        if (cur && this.serverUpdatedAt && cur.updated_at !== this.serverUpdatedAt) {
+          const overwrite = confirm(
+            'Your collection was changed on another device since this one loaded it.\n\n' +
+            'OK = overwrite the cloud with THIS device’s version.\n' +
+            'Cancel = keep the other device’s version (reload this page to see it).');
+          if (!overwrite) {
+            this.setStatus('Save paused — reload to sync', 'error');
+            this.pushing = false;
+            return;
+          }
+        }
+      } catch (e) { /* if the check fails, proceed with the save */ }
+
+      const ts = new Date().toISOString();
       const structured = this.buildStructured();
       const { error } = await sb.from('collections')
-        .upsert({ user_id: this.uid, data: structured, updated_at: new Date().toISOString() },
+        .upsert({ user_id: this.uid, data: structured, updated_at: ts },
                 { onConflict: 'user_id' });
       if (error) throw error;
+      this.serverUpdatedAt = ts;
 
       const media = this.collectMedia();
       const currentKeys = new Set(Object.keys(media));

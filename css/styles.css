@@ -1382,3 +1382,7 @@ table.data-table .thumb-placeholder {
 .reminder-icon { font-size: 1.1rem; flex-shrink: 0; }
 .reminder-text { flex: 1; font-size: 0.86rem; color: var(--text); }
 .reminder-go { color: var(--text3); font-size: 1.3rem; }
+
+/* ===== ACCOUNT (v2.4) ===== */
+.auth-link { display: block; width: 100%; margin-top: 12px; background: none; border: none; color: var(--accent); font-size: 0.8rem; cursor: pointer; text-align: center; }
+.auth-link:hover { text-decoration: underline; }
