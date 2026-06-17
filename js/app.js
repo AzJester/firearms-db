@@ -1240,7 +1240,7 @@ function renderAmmoTab() {
   </div>`;
 
   if (items.length === 0) {
-    h += '<div style="text-align:center;padding:40px;color:var(--text2);">No ammunition tracked yet.</div>';
+    h += tabEmpty('🎯', 'No ammunition tracked yet', 'Log rounds on hand, calibers, and value as you stock up.', '<button class="btn btn-primary" onclick="openAddAmmoModal()">+ Add Ammo</button>');
     document.getElementById('tableContainer').innerHTML = h;
     return;
   }
@@ -1348,6 +1348,11 @@ function escAttr(s) { return esc(s).replace(/"/g, '&quot;'); } // safe inside do
 function rteValue(id) { const v = (document.getElementById(id).innerHTML || '').trim(); return v === '<br>' ? '' : v; }
 // Render stored rich-text for display (skips the empty-<br> sentinel).
 function rteShow(html) { return (html && html !== '<br>') ? html : ''; }
+// Consistent friendly empty state for a tab (icon, title, optional sub + action button).
+function tabEmpty(icon, title, sub, actionHtml) {
+  return '<div class="empty-inline"><div class="icon">' + icon + '</div><h3>' + esc(title) + '</h3>' +
+    (sub ? '<p>' + esc(sub) + '</p>' : '') + (actionHtml || '') + '</div>';
+}
 function fmtDate(d) { if(!d) return '--'; const p=d.split('-'); if(p.length!==3) return d; return p[1]+'/'+p[2]+'/'+p[0]; }
 
 // Rich text editor
@@ -1893,7 +1898,9 @@ function renderAccessoriesTab() {
     <span>Total Value: <span style="color: var(--accent);">$${totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></span>
   </div>`;
   if (items.length === 0) {
-    h += '<div style="text-align:center;padding:40px;color:var(--text2);">' + (db.accessories.length === 0 ? 'No accessories tracked yet.' : 'No accessories match your search.') + '</div>';
+    h += db.accessories.length === 0
+      ? tabEmpty('📦', 'No accessories tracked yet', 'Optics, suppressors, lights, magazines — track them and link them to builds.', '<button class="btn btn-primary" onclick="openAccessoryModal()">+ Add Accessory</button>')
+      : tabEmpty('🔍', 'No accessories match your search', 'Try a different term or clear the search box.', '');
     document.getElementById('tableContainer').innerHTML = h; return;
   }
   h += '<table class="data-table"><thead><tr><th>Name</th><th>Category</th><th>Brand</th><th>Model / Part #</th><th>Assigned To</th><th>Condition</th><th>Price</th><th>Date</th><th>Receipt</th><th></th></tr></thead><tbody>';
@@ -2315,6 +2322,14 @@ document.addEventListener('click', e => {
 // INIT
 // =====================================================
 
+// Accessibility: give icon-only controls screen-reader labels.
+(function labelIconControls() {
+  try {
+    document.querySelectorAll('.modal-close').forEach(b => { if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', 'Close'); });
+    const tt = document.getElementById('themeToggle'); if (tt && !tt.getAttribute('aria-label')) tt.setAttribute('aria-label', 'Toggle dark mode');
+  } catch (e) { /* non-fatal */ }
+})();
+
 // =====================================================
 // DB SCHEMA ADDITIONS (ensure fields exist)
 // =====================================================
@@ -2416,7 +2431,7 @@ function renderWishlistTab() {
   const items = db.wishlist || [];
   const totalTarget = items.reduce((s, w) => s + (parseFloat(w.price) || 0), 0);
   let h = '<div style="padding:16px 24px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.86rem;font-weight:600;"><span>Wishlist Items: <span style="color:var(--accent);">' + items.length + '</span></span><span>Target Budget: <span style="color:var(--accent);">$' + totalTarget.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span></span></div>';
-  if (items.length === 0) { h += '<div style="text-align:center;padding:40px;color:var(--text2);">Your wishlist is empty.</div>'; document.getElementById('tableContainer').innerHTML = h; return; }
+  if (items.length === 0) { h += tabEmpty('⭐', 'Your wishlist is empty', 'Track guns you want, set a target price and priority, then move them to your collection when you buy.', '<button class="btn btn-primary" onclick="openWishlistModal()">+ Add Wishlist Item</button>'); document.getElementById('tableContainer').innerHTML = h; return; }
   h += '<table class="data-table"><thead><tr><th>Priority</th><th>Make</th><th>Model</th><th>Caliber</th><th>Type</th><th>Target Price</th><th>Dealer</th><th>Added</th><th></th></tr></thead><tbody>';
   const sorted = [...items].sort((a,b) => {const p={high:0,medium:1,low:2}; return (p[a.priority]||1)-(p[b.priority]||1);});
   sorted.forEach(w => {
@@ -2678,7 +2693,7 @@ function renderDealersTab() {
     + '<span style="font-size:0.86rem;font-weight:600;">FFL Dealers: <span style="color:var(--accent);" id="dealerShownCount">' + items.length + '</span></span>'
     + '<button class="btn btn-small btn-secondary" onclick="openDealerImportModal()">⬇️ Import dealers</button>'
     + '</div>';
-  if (items.length === 0) { h += '<div style="text-align:center;padding:40px;color:var(--text2);">No dealers saved yet.<div style="margin-top:16px;"><button class="btn btn-primary" onclick="openDealerImportModal()">⬇️ Import dealers</button></div></div>'; document.getElementById('tableContainer').innerHTML = h; return; }
+  if (items.length === 0) { h += tabEmpty('🏢', 'No dealers saved yet', 'Add your go-to FFLs, or load the built-in Arizona starter list to get going fast.', '<button class="btn btn-primary" onclick="openDealerImportModal()">⬇️ Import dealers</button>'); document.getElementById('tableContainer').innerHTML = h; return; }
 
   // Area counts for the filter chips
   const counts = {}; items.forEach(d => { const a = dealerArea(d); counts[a] = (counts[a] || 0) + 1; });
@@ -2712,7 +2727,7 @@ function renderDealersTab() {
     h += '<span class="ffl-area-badge">' + esc(labelFor(area)) + '</span>';
     h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><h4>' + esc(d.name) + '</h4>'
       + '<div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">'
-      + '<button class="dealer-fav' + (d.favorite ? ' active' : '') + '" title="' + (d.favorite ? 'Remove from preferred' : 'Mark as preferred') + '" onclick="event.stopPropagation();toggleDealerFavorite(\'' + d.id + '\')">' + (d.favorite ? '★' : '☆') + '</button>'
+      + '<button class="dealer-fav' + (d.favorite ? ' active' : '') + '" title="' + (d.favorite ? 'Remove from preferred' : 'Mark as preferred') + '" aria-label="' + (d.favorite ? 'Remove from preferred dealers' : 'Mark as preferred dealer') + '" aria-pressed="' + (d.favorite ? 'true' : 'false') + '" onclick="event.stopPropagation();toggleDealerFavorite(\'' + d.id + '\')">' + (d.favorite ? '★' : '☆') + '</button>'
       + '<button class="btn btn-small btn-danger" onclick="event.stopPropagation();deleteDealer(\'' + d.id + '\')">Del</button>'
       + '</div></div>';
     if (d.ffl) h += '<div class="ffl-detail">FFL: ' + esc(d.ffl) + ' · <a href="https://fflezcheck.atf.gov/" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);">verify</a></div>';
