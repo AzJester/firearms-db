@@ -1680,9 +1680,17 @@ function openDetail(id) {
 
   let accessoriesH = '';
   const assignedAcc = db.accessories.filter(a => a.firearmId === f.id);
+  const firearmPrice = parseFloat(f.price) || 0;
+  const accTotal = assignedAcc.reduce((s, a) => s + (parseFloat(a.price) || 0), 0);
+  const buildTotal = firearmPrice + accTotal;
+  const addBuildBtn = `<button class="btn btn-small btn-primary" onclick="event.stopPropagation(); closeDetail(); openAccessoryModal(); setTimeout(function(){var s=document.getElementById('accFirearm'); if(s) s.value='${f.id}';}, 60);">+ Add to build</button>`;
+  const buildHeader = `<div class="build-summary">
+      <div><div class="build-summary-label">Total build value</div><div class="build-summary-value">$${buildTotal.toLocaleString()}</div></div>
+      <div class="build-summary-meta">Firearm $${firearmPrice.toLocaleString()} &nbsp;+&nbsp; ${assignedAcc.length} part${assignedAcc.length===1?'':'s'} $${accTotal.toLocaleString()}</div>
+    </div>`;
   if (assignedAcc.length > 0) {
-    accessoriesH = '<div class="detail-section"><h3>Assigned Accessories (' + assignedAcc.length + ')</h3><div style="display: flex; flex-direction: column; gap: 8px;">';
-    assignedAcc.forEach(a => {
+    accessoriesH = '<div class="detail-section"><h3 style="display:flex;justify-content:space-between;align-items:center;gap:10px;">Build / Loadout (' + assignedAcc.length + ' parts) ' + addBuildBtn + '</h3>' + buildHeader + '<div style="display: flex; flex-direction: column; gap: 8px;">';
+    assignedAcc.slice().sort((a,b)=>(a.category||'').localeCompare(b.category||'')).forEach(a => {
       const apr = a.price ? '$' + parseFloat(a.price).toLocaleString() : '';
       accessoriesH += `<div style="padding: 10px; background: var(--bg3); border-radius: 6px; border-left: 3px solid var(--blue); display: flex; justify-content: space-between; align-items: center;">
         <div><div style="font-weight: 600; margin-bottom: 2px;">${esc(a.name)}</div>
@@ -1693,7 +1701,7 @@ function openDetail(id) {
     });
     accessoriesH += '</div></div>';
   } else {
-    accessoriesH = '<div class="detail-section"><h3>Assigned Accessories</h3><p style="color: var(--text3); font-size: 0.8rem;">No accessories assigned to this firearm.</p></div>';
+    accessoriesH = '<div class="detail-section"><h3 style="display:flex;justify-content:space-between;align-items:center;gap:10px;">Build / Loadout ' + addBuildBtn + '</h3><p style="color: var(--text3); font-size: 0.8rem;">No parts added to this build yet. Add optics, suppressors, lights and more — the total build value updates automatically.</p></div>';
   }
 
   let maintenanceH = '';
