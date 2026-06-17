@@ -221,15 +221,17 @@ const CloudSync = {
       const media = this.collectMedia();
       const currentKeys = new Set(Object.keys(media));
 
-      // upload new / changed
-      for (const key of currentKeys) {
-        const h = this.hash(media[key]);
-        if (this.syncedHashes[key] === h) continue;
+      // upload new / changed (with progress)
+      const toUpload = [...currentKeys].filter(k => this.syncedHashes[k] !== this.hash(media[k]));
+      let done = 0;
+      for (const key of toUpload) {
         const blob = await this.dataURLtoBlob(media[key]);
         const { error: upErr } = await sb.storage.from('media')
           .upload(this.safePath(key), blob, { upsert: true, contentType: this.mimeOf(media[key]) });
         if (upErr) throw upErr;
-        this.syncedHashes[key] = h;
+        this.syncedHashes[key] = this.hash(media[key]);
+        done++;
+        if (toUpload.length > 1) this.setStatus('Uploading ' + done + '/' + toUpload.length + '…', 'syncing');
       }
 
       // remove deleted

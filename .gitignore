@@ -1,8 +1,13 @@
 # Never commit personal collection data to the public repo.
 # Your real data lives in Supabase, not here.
-*backup*.json
+*backup*
 *_database*.json
 firearms_full_backup.json
+*.json
+!manifest.webmanifest
+*.zip
+*.csv
+*.xlsx
 /data/
 /private/
 
