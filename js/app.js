@@ -1020,7 +1020,7 @@ function renderAmmoTab() {
 
 function renderCards(items) {
   document.getElementById('cardGrid').innerHTML = items.map(f => {
-    const img = f.images && f.images.length > 0 && imagesDb[f.images[0]] ? `<img class="card-img" src="${imagesDb[f.images[0]]}" alt="${esc(f.make)} ${esc(f.model)}">` : `<div class="card-img-placeholder">&#10022;</div>`;
+    const img = f.images && f.images.length > 0 && imagesDb[f.images[0]] ? `<img class="card-img" loading="lazy" src="${imagesDb[f.images[0]]}" alt="${esc(f.make)} ${esc(f.model)}">` : `<div class="card-img-placeholder">&#10022;</div>`;
     const nfa = f.isNFA ? `<div class="nfa-badge">${esc(f.nfaType||'NFA')}</div>` : '';
     let stamp = '';
     if (f.isNFA && f.stampStatus) {
@@ -1051,7 +1051,7 @@ function renderTable(items) {
   h += '</tr></thead><tbody>';
 
   items.forEach(f => {
-    const im = f.images && f.images.length > 0 && imagesDb[f.images[0]]?`<img class="thumb" src="${imagesDb[f.images[0]]}">` : `<span class="thumb-placeholder">&#10022;</span>`;
+    const im = f.images && f.images.length > 0 && imagesDb[f.images[0]]?`<img class="thumb" loading="lazy" src="${imagesDb[f.images[0]]}">` : `<span class="thumb-placeholder">&#10022;</span>`;
     const pr = f.price?'$'+parseFloat(f.price).toLocaleString():'--';
     let nfa='';
     if(f.isNFA){nfa=`<span class="nfa-tag">${esc(f.nfaType||'NFA')}</span>`;if(f.stampStatus){const c=f.stampStatus==='Approved'?'approved':f.stampStatus==='Pending'?'pending':'submitted';nfa+=` <span class="stamp-tag ${c}">${esc(f.stampStatus)}</span>`;}}

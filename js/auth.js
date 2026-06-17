@@ -44,6 +44,7 @@
     overlay.style.display = 'none';
     appRoot.style.display = '';
     document.getElementById('authedEmail').textContent = session.user.email || '';
+    const se = document.getElementById('settingsEmail'); if (se) se.textContent = session.user.email || '';
     if (!booted) {
       booted = true;
       await window.bootApp();          // loads local cache + pulls from cloud + renders
@@ -127,6 +128,34 @@
       }
     });
   }
+
+  // ---- forgot password (login screen) ----
+  const forgotBtn = document.getElementById('forgotBtn');
+  if (forgotBtn) forgotBtn.addEventListener('click', async () => {
+    const email = (emailEl.value || '').trim();
+    if (!email) { showError('Enter your email above first, then tap "Forgot password?".'); return; }
+    try {
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.href });
+      if (error) { showError(prettyError(error)); return; }
+      showError('');
+      if (window.toast) toast('If an account exists for ' + email + ', a password-reset email has been sent. Check spam too.', 'success', 7000);
+    } catch (e) { showError(prettyError(e)); }
+  });
+
+  // ---- change password (Settings → Cloud Account) ----
+  window.changeCloudPassword = async function () {
+    const pw = document.getElementById('acctNewPassword');
+    const cf = document.getElementById('acctConfirmPassword');
+    const a = (pw && pw.value) || '', b = (cf && cf.value) || '';
+    if (a.length < 6) { toast('Password must be at least 6 characters.', 'error'); return; }
+    if (a !== b) { toast('Passwords do not match.', 'error'); return; }
+    try {
+      const { error } = await sb.auth.updateUser({ password: a });
+      if (error) { toast('Could not change password: ' + (error.message || 'error'), 'error'); return; }
+      pw.value = ''; cf.value = '';
+      toast('Password changed. Use it next time you sign in.', 'success');
+    } catch (e) { toast('Could not change password: ' + (e.message || e), 'error'); }
+  };
 
   // ---- sign out (exposed for the toolbar button) ----
   window.Auth = {
