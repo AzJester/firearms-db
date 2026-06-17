@@ -113,8 +113,10 @@
       const file = e.target.files[0];
       e.target.value = '';
       if (!file) return;
-      if (!confirm('Replace your ENTIRE current collection with the contents of "' + file.name +
-                   '"?\n\nThis overwrites what is in the cloud now. (Tip: use "Save to File" first if you want a safety copy.)')) return;
+      const okRestore = (typeof confirmDialog === 'function')
+        ? await confirmDialog('Replace your ENTIRE current collection with the contents of "' + file.name + '"? This overwrites what is in the cloud now. (Tip: use "Save to File" first if you want a safety copy.)', { title: 'Restore from file', okText: 'Replace everything', danger: true })
+        : confirm('Replace your ENTIRE current collection with the contents of "' + file.name + '"?');
+      if (!okRestore) return;
       try {
         if (window.toast) toast('Restoring from backup… uploading photos in the background.', 'info', 6000);
         const res = await CloudSync.restoreFromFile(file);
@@ -160,7 +162,10 @@
   // ---- sign out (exposed for the toolbar button) ----
   window.Auth = {
     async signOut() {
-      if (!confirm('Sign out of this device? Your data stays safe in the cloud.')) return;
+      const okSignOut = (typeof confirmDialog === 'function')
+        ? await confirmDialog('Sign out of this device? Your data stays safe in the cloud.', { title: 'Sign out', okText: 'Sign out' })
+        : confirm('Sign out of this device? Your data stays safe in the cloud.');
+      if (!okSignOut) return;
       try { if (CloudSync.ready) await CloudSync.syncNow(); } catch (_) {}
       await sb.auth.signOut();
       location.reload();

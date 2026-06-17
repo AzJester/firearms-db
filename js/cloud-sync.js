@@ -228,10 +228,9 @@ const CloudSync = {
         const { data: cur } = await sb.from('collections')
           .select('updated_at').eq('user_id', this.uid).maybeSingle();
         if (cur && this.serverUpdatedAt && cur.updated_at !== this.serverUpdatedAt) {
-          const overwrite = confirm(
-            'Your collection was changed on another device since this one loaded it.\n\n' +
-            'OK = overwrite the cloud with THIS device’s version.\n' +
-            'Cancel = keep the other device’s version (reload this page to see it).');
+          const overwrite = (typeof confirmDialog === 'function')
+            ? await confirmDialog('Your collection was changed on another device since this one loaded it. Overwrite the cloud with THIS device’s version? (Cancel keeps the other device’s version — reload this page to see it.)', { title: 'Sync conflict', okText: 'Overwrite cloud', cancelText: 'Keep other version', danger: true })
+            : confirm('Your collection was changed on another device since this one loaded it.\n\nOK = overwrite the cloud with THIS device’s version.\nCancel = keep the other device’s version (reload this page to see it).');
           if (!overwrite) {
             this.setStatus('Save paused — reload to sync', 'error');
             this.pushing = false;
