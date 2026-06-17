@@ -228,11 +228,11 @@
       <div><span class="stat-lbl">Ammo</span><span class="stat-val" id="statAmmo">0</span></div>
       <div><span class="stat-lbl">Value</span><span class="stat-val" id="statValue">$0</span></div>
     </div>
-    <button class="bell-btn" id="cmdkBtn" onclick="openCmdK()" title="Search / commands (Ctrl or &#8984; K)" aria-label="Search">&#128269;</button>
-    <button class="bell-btn" id="reminderBell" onclick="openReminders()" title="Reminders" aria-label="Reminders">&#128276;<span class="bell-badge" id="reminderBadge" style="display:none;">0</span></button>
+    <button class="bell-btn" id="cmdkBtn" onclick="openCmdK()" title="Search / commands (Ctrl or &#8984; K)" aria-label="Search"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+    <button class="bell-btn" id="reminderBell" onclick="openReminders()" title="Reminders" aria-label="Reminders"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="bell-badge" id="reminderBadge" style="display:none;">0</span></button>
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode">&#9790;</button>
     <div class="menu" id="acctMenu">
-      <button class="theme-toggle" data-menu-toggle title="Menu" aria-label="Account menu" aria-haspopup="true">&#9881;</button>
+      <button class="theme-toggle" data-menu-toggle title="Menu" aria-label="Account menu" aria-haspopup="true"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <div class="menu-panel menu-panel-right">
         <button class="menu-item" onclick="CloudSync.syncNow()">&#128259; Sync now</button>
         <button class="menu-item" onclick="manualBackup()">&#128190; Backup now</button>
@@ -939,12 +939,12 @@
 </div>
 <!-- Mobile bottom navigation -->
 <nav class="bottom-nav" id="bottomNav">
-  <button class="bn-item" data-bottomtab="dashboard"><span class="bn-ico">&#9632;</span><span class="bn-lbl">Dash</span></button>
-  <button class="bn-item" data-bottomtab="all"><span class="bn-ico">&#128737;</span><span class="bn-lbl">Firearms</span></button>
-  <button class="bn-fab" id="bnFab" onclick="ctxAdd()" aria-label="Add">+</button>
-  <button class="bn-item" data-bottomtab="ammo"><span class="bn-ico">&#127919;</span><span class="bn-lbl">Ammo</span></button>
+  <button class="bn-item" data-bottomtab="dashboard"><span class="bn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></span><span class="bn-lbl">Dash</span></button>
+  <button class="bn-item" data-bottomtab="all"><span class="bn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><span class="bn-lbl">Firearms</span></button>
+  <button class="bn-fab" id="bnFab" onclick="ctxAdd()" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button class="bn-item" data-bottomtab="ammo"><span class="bn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span><span class="bn-lbl">Ammo</span></button>
   <div class="menu bn-more-menu" id="bnMoreMenu">
-    <button class="bn-item" data-menu-toggle aria-haspopup="true"><span class="bn-ico">&#9776;</span><span class="bn-lbl">More</span></button>
+    <button class="bn-item" data-menu-toggle aria-haspopup="true"><span class="bn-ico"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></span><span class="bn-lbl">More</span></button>
     <div class="menu-panel menu-panel-up menu-panel-right">
       <button class="menu-item" data-bottomtab="accessories">&#128230; Accessories</button>
       <button class="menu-item" data-bottomtab="nfa">&#128196; NFA Items</button>

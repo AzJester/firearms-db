@@ -1553,3 +1553,9 @@ table.data-table th { letter-spacing: 0.3px; }
 .detail-section { border-radius: 12px; margin-top: 18px; }
 .detail-section h3 { letter-spacing: 0.6px; }
 @media (max-width: 600px) { .detail-body h2 { font-size: 1.3rem; } .detail-body { padding: 18px; } }
+
+/* ===== SVG ICONS (v3.5) ===== */
+.bell-btn .ico, .theme-toggle .ico { width: 20px; height: 20px; display: block; }
+.bell-btn { display: inline-flex; align-items: center; justify-content: center; }
+.bn-ico svg { width: 22px; height: 22px; display: block; }
+.bn-fab svg { width: 26px; height: 26px; }
