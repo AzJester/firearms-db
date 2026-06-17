@@ -1,0 +1,29 @@
+THIRD-PARTY COMPONENTS
+
+Firearms Vault — Local Edition uses the following open-source libraries and
+font. Each is the property of its respective authors and is used under its own
+license. These notices must remain with the product.
+
+- Chart.js — charts. MIT License. https://www.chartjs.org/
+- SheetJS / xlsx (Community Edition) — Excel export. Apache License 2.0.
+  https://sheetjs.com/
+- jsPDF — PDF export. MIT License. https://github.com/parallax/jsPDF
+- jsPDF-AutoTable — PDF tables. MIT License.
+  https://github.com/simonbengtsson/jsPDF-AutoTable
+- Tesseract.js — optional serial-number OCR scanning. Apache License 2.0.
+  https://tesseract.projectnaptha.com/
+- qrcodejs — QR code generation. MIT License.
+  https://github.com/davidshimjs/qrcodejs
+- JSZip — reading/writing .zip files. Dual licensed MIT or GPLv3 (MIT used).
+  https://stuk.github.io/jszip/
+- Inter typeface — UI font. SIL Open Font License 1.1.
+  https://rsms.me/inter/
+
+Full license texts are available at the URLs above. The MIT, Apache-2.0, and
+SIL OFL licenses permit redistribution within a commercial product provided
+their copyright and permission notices are retained — which this file does.
+
+NOTE: If your build loads these libraries from a public CDN (the default), the
+CDN simply serves the unmodified library code. If you vendor (bundle) them into
+this folder for fully-offline use, keep this notice and include each library's
+own LICENSE file alongside it.

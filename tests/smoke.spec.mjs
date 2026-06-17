@@ -37,3 +37,33 @@ test('share viewer page loads and handles a missing token', async ({ page }) => 
   // With no ?t= token it should render a friendly message, not crash.
   await expect(page.locator('.sv-msg')).toBeVisible({ timeout: 15000 });
 });
+
+// The standalone, sellable local-only build: no login, no Supabase, no network
+// sync — it must boot straight into the app on its own runtime (local-store.js).
+test('local edition boots with no login and no app-script errors', async ({ page }) => {
+  const ownErrors = [];
+  page.on('pageerror', (e) => {
+    const s = (e && e.stack) || String(e);
+    if (/\/local-edition\/js\/(app|local-store)\.js/.test(s)) ownErrors.push(s);
+  });
+
+  await page.goto('/local-edition/index.html');
+
+  // No auth gate — the app shell is shown immediately.
+  await expect(page.locator('#appRoot')).toBeVisible({ timeout: 15000 });
+  // Fresh profile => the first-run sample-data prompt appears.
+  await expect(page.locator('#localFirstRun')).toBeVisible({ timeout: 15000 });
+
+  const globals = await page.evaluate(() => ({
+    bootApp: typeof window.bootApp,
+    loadSampleData: typeof window.loadSampleData,
+    restoreLocalBackup: typeof window.restoreLocalBackup,
+    CloudSync: typeof window.CloudSync
+  }));
+  expect(globals.bootApp).toBe('function');
+  expect(globals.loadSampleData).toBe('function');
+  expect(globals.restoreLocalBackup).toBe('function');
+  expect(globals.CloudSync).toBe('object');
+
+  expect(ownErrors, 'No runtime errors from local-edition scripts:\n' + ownErrors.join('\n')).toHaveLength(0);
+});
