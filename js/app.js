@@ -2483,7 +2483,32 @@ const AZ_FFL_DEALERS = [
   { name: "Specialized Firearms Supply", phone: "", address: "7880 E Wild Mustang Pl, Tucson, AZ 85750", website: "", notes: "" },
   { name: "520 Tactical", phone: "", address: "5051 E 29th St, Tucson, AZ 85711", website: "", notes: "" },
   { name: "C-A-L Ranch Stores (Tucson)", phone: "", address: "6363 E 22nd St, Tucson, AZ 85710", website: "https://www.calranch.com", notes: "Ranch & farm retailer with firearms counter." },
-  { name: "AZ Arms and Antiques", phone: "(520) 471-3244", address: "3033 W Gymkhana Way, Tucson, AZ 85742", website: "", notes: "Firearms & antiques." }
+  { name: "AZ Arms and Antiques", phone: "(520) 471-3244", address: "3033 W Gymkhana Way, Tucson, AZ 85742", website: "", notes: "Firearms & antiques." },
+  // Northern AZ (Flagstaff, Prescott, Verde Valley, Rim Country)
+  { name: "2nd Amendment Store", phone: "(928) 266-0683", address: "2500 S Woodlands Village Blvd #25, Flagstaff, AZ 86001", website: "https://2astore.com", notes: "Firearms & sporting goods." },
+  { name: "Arizona Collectibles and Firearms", phone: "(928) 310-8544", address: "9900 E Wapiti Trl, Flagstaff, AZ 86004", website: "", notes: "Firearms & collectibles." },
+  { name: "C-A-L Ranch Stores (Flagstaff)", phone: "", address: "2530 N 4th St, Flagstaff, AZ 86004", website: "https://www.calranch.com", notes: "Ranch & farm retailer with firearms counter." },
+  { name: "Royal Ordnance", phone: "(928) 445-1735", address: "1344 Gifford Dr, Prescott, AZ 86305", website: "", notes: "Firearms dealer." },
+  { name: "Sirius Arms", phone: "(928) 275-2535", address: "1201 Iron Springs Rd #7, Prescott, AZ 86305", website: "", notes: "Firearms dealer." },
+  { name: "Sport Shooters Supply", phone: "(928) 713-0457", address: "1929 Ventnor Cir, Prescott, AZ 86301", website: "", notes: "Firearms & ammo." },
+  { name: "Hamilton & Son's Firearms", phone: "", address: "475 S Airpark Rd, Ste 1, Cottonwood, AZ 86326", website: "https://hamiltonfirearms.com", notes: "Verde Valley gun shop." },
+  { name: "Smoke-N-Guns", phone: "(928) 634-3216", address: "322 S Main St, Cottonwood, AZ 86326", website: "https://www.smokenguns.com", notes: "Verde Valley gun shop." },
+  { name: "Rim Country Guns", phone: "(928) 474-8000", address: "513 S Beeline Hwy, Payson, AZ 85541", website: "", notes: "Rim Country gun shop." },
+  // Western AZ (Lake Havasu, Kingman, Bullhead City)
+  { name: "Southwest Firearms", phone: "", address: "2148 McCulloch Blvd N #101, Lake Havasu City, AZ 86403", website: "https://southwestfirearm.com", notes: "Gun shop, gunsmith & CCW classes." },
+  { name: "Sierra 1 Guns and Gear", phone: "", address: "3045 Daytona Ave, Lake Havasu City, AZ 86403", website: "", notes: "Firearms & gear." },
+  { name: "Citadel Armory", phone: "", address: "1605 Neptune Dr, Lake Havasu City, AZ 86404", website: "", notes: "Firearms dealer." },
+  { name: "The Gun Shop (Kingman)", phone: "(928) 681-4570", address: "4938 N Stockton Hill Rd, Kingman, AZ 86409", website: "", notes: "Local gun shop." },
+  { name: "TAC50", phone: "", address: "2124 Hwy 95, Ste A, Bullhead City, AZ 86442", website: "https://tac50.com", notes: "Buys & sells guns, gold & silver." },
+  { name: "Mohave Armory", phone: "", address: "1699 Hwy 95, Bullhead City, AZ 86442", website: "https://mohavearmoryaz.com", notes: "Full-service gun shop." },
+  // Southern AZ (Sierra Vista, Casa Grande)
+  { name: "Apocalypse Arms and Military Surplus", phone: "(520) 458-9133", address: "101 W Fry Blvd, Sierra Vista, AZ 85635", website: "", notes: "Firearms & military surplus." },
+  { name: "King's Armory", phone: "", address: "65 S Highway 92, Suite C, Sierra Vista, AZ 85635", website: "", notes: "Firearms dealer." },
+  { name: "Denny's Shooting Sports", phone: "", address: "2248 Baywood Ln, Sierra Vista, AZ 85635", website: "", notes: "Firearms & shooting sports." },
+  { name: "C-A-L Ranch Stores (Sierra Vista)", phone: "", address: "673 N Highway 90, Sierra Vista, AZ 85635", website: "https://www.calranch.com", notes: "Ranch & farm retailer with firearms counter." },
+  { name: "1789 Arms", phone: "(928) 307-1789", address: "206 W Caribbean Dr, Casa Grande, AZ 85122", website: "", notes: "Firearms dealer." },
+  { name: "Desert Vista Gun Sales", phone: "(602) 206-3452", address: "8959 S Valley Vista Dr, Casa Grande, AZ 85193", website: "", notes: "Firearms dealer & transfers." },
+  { name: "Elegant Arms", phone: "(520) 233-6971", address: "1216 E Palo Verde Dr, Casa Grande, AZ 85122", website: "", notes: "Firearms dealer." }
 ];
 
 function _dealerKey(d) { return ((d.name || '') + '|' + (d.address || '')).toLowerCase().replace(/\s+/g, ' ').trim(); }
@@ -2553,6 +2578,9 @@ function dealerArea(d) {
   if (a.indexOf('yuma') > -1) return 'Yuma';
   if (/(phoenix|scottsdale|mesa|tempe|glendale|peoria|chandler|gilbert|surprise|avondale|goodyear|queen creek|fountain hills|cave creek|paradise valley|sun city)/.test(a)) return 'Phoenix';
   if (a.indexOf('tucson') > -1 || a.indexOf('marana') > -1 || a.indexOf('oro valley') > -1 || a.indexOf('vail') > -1 || a.indexOf('sahuarita') > -1) return 'Tucson';
+  if (/(flagstaff|prescott|sedona|cottonwood|clarkdale|jerome|camp verde|payson|show low|pinetop|lakeside|snowflake|taylor|winslow|holbrook|williams|page|chino valley|dewey|humboldt)/.test(a)) return 'Northern AZ';
+  if (/(lake havasu|kingman|bullhead|fort mohave|mohave valley|golden valley|parker|quartzsite)/.test(a)) return 'Western AZ';
+  if (/(sierra vista|casa grande|nogales|douglas|bisbee|benson|willcox|green valley|maricopa|eloy|coolidge|globe|safford|thatcher)/.test(a)) return 'Southern AZ';
   return 'Other';
 }
 
@@ -2602,7 +2630,7 @@ function renderDealersTab() {
   const labelFor = a => a === 'Phoenix' ? 'Phoenix Metro' : a === 'all' ? 'All' : a;
   const chip = (area, n) => '<button class="dealer-chip' + (_dealerFilterArea === area ? ' active' : '') + '" data-area="' + area + '" onclick="setDealerArea(\'' + area + '\')">' + labelFor(area) + ' <span class="dealer-chip-n">' + n + '</span></button>';
   let chips = chip('all', items.length);
-  ['Yuma', 'Phoenix', 'Tucson', 'Other'].forEach(a => { if (counts[a]) chips += chip(a, counts[a]); });
+  ['Yuma', 'Phoenix', 'Tucson', 'Northern AZ', 'Western AZ', 'Southern AZ', 'Other'].forEach(a => { if (counts[a]) chips += chip(a, counts[a]); });
 
   h += '<div class="dealer-filterbar">'
     + '<input type="text" id="dealerSearch" class="dealer-search" placeholder="Search name, city, notes…" oninput="applyDealerFilter()" value="' + escAttr(_dealerFilterQ) + '">'
