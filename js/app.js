@@ -2418,9 +2418,10 @@ function openDealerModal(editId) {
     document.getElementById('dEmail').value = d.email || '';
     document.getElementById('dAddress').value = d.address || '';
     document.getElementById('dWebsite').value = d.website || '';
-    document.getElementById('dNotes').value = d.notes || '';
+    document.getElementById('dNotes').innerHTML = d.notes || '';
   } else {
-    ['dName','dFFL','dPhone','dEmail','dAddress','dWebsite','dNotes'].forEach(id => document.getElementById(id).value = '');
+    ['dName','dFFL','dPhone','dEmail','dAddress','dWebsite'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('dNotes').innerHTML = '';
   }
   document.getElementById('dealerModal').classList.add('open');
 }
@@ -2430,7 +2431,9 @@ function closeDealerModal() { document.getElementById('dealerModal').classList.r
 async function saveDealer() {
   const name = document.getElementById('dName').value.trim();
   if (!name) { toast('Enter a dealer name.'); return; }
-  const data = { id: editingDealerId || generateId(), name, ffl: document.getElementById('dFFL').value.trim(), phone: document.getElementById('dPhone').value.trim(), email: document.getElementById('dEmail').value.trim(), address: document.getElementById('dAddress').value.trim(), website: document.getElementById('dWebsite').value.trim(), notes: document.getElementById('dNotes').value.trim() };
+  let notes = document.getElementById('dNotes').innerHTML.trim();
+  if (notes === '<br>') notes = ''; // contenteditable leaves a stray <br> when emptied
+  const data = { id: editingDealerId || generateId(), name, ffl: document.getElementById('dFFL').value.trim(), phone: document.getElementById('dPhone').value.trim(), email: document.getElementById('dEmail').value.trim(), address: document.getElementById('dAddress').value.trim(), website: document.getElementById('dWebsite').value.trim(), notes };
   if (editingDealerId) { const i = db.dealers.findIndex(x => x.id === editingDealerId); if (i > -1) db.dealers[i] = data; addAuditEntry('edit','dealer',name,''); }
   else { db.dealers.push(data); addAuditEntry('create','dealer',name,''); }
   await saveData(); render(); closeDealerModal();
@@ -2649,7 +2652,8 @@ function renderDealersTab() {
   h += '<div id="dealerGrid" style="padding:16px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px;">';
   items.forEach(d => {
     const area = dealerArea(d);
-    const text = ((d.name || '') + ' ' + (d.address || '') + ' ' + (d.phone || '') + ' ' + (d.email || '') + ' ' + (d.notes || '') + ' ' + (d.ffl || '')).toLowerCase();
+    const notesText = (d.notes || '').replace(/<[^>]*>/g, ' '); // strip rich-text tags for search
+    const text = ((d.name || '') + ' ' + (d.address || '') + ' ' + (d.phone || '') + ' ' + (d.email || '') + ' ' + notesText + ' ' + (d.ffl || '')).toLowerCase();
     h += '<div class="ffl-card" data-area="' + area + '" data-text="' + escAttr(text) + '" style="cursor:pointer;" onclick="openDealerModal(\'' + d.id + '\')">';
     h += '<span class="ffl-area-badge">' + esc(labelFor(area)) + '</span>';
     h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><h4>' + esc(d.name) + '</h4><button class="btn btn-small btn-danger" onclick="event.stopPropagation();deleteDealer(\'' + d.id + '\')">Del</button></div>';
@@ -2659,7 +2663,7 @@ function renderDealersTab() {
     if (d.email) h += '<div class="ffl-detail">Email: ' + esc(d.email) + '</div>';
     if (d.address) h += '<div class="ffl-detail">' + esc(d.address) + '</div>';
     if (d.website) h += '<div class="ffl-detail"><a href="' + esc(d.website) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);">Website</a></div>';
-    if (d.notes) h += '<div class="ffl-detail" style="margin-top:6px;font-style:italic;">' + esc(d.notes) + '</div>';
+    if (d.notes && d.notes !== '<br>') h += '<div class="ffl-detail dealer-notes">' + d.notes + '</div>';
     h += '</div>';
   });
   h += '</div>';

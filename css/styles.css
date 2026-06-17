@@ -1624,6 +1624,12 @@ table.data-table th { letter-spacing: 0.3px; }
 .dealer-chip.active .dealer-chip-n { background: rgba(255,255,255,0.25); }
 .ffl-area-badge { display: inline-block; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--accent); background: var(--accent-light); border-radius: 10px; padding: 2px 8px; margin-bottom: 6px; }
 @media (max-width: 600px) { .dealer-filterbar { padding: 12px 16px; } }
+/* Rich-text dealer notes rendered inside the card */
+.ffl-card .dealer-notes { margin-top: 8px; font-size: 0.8rem; color: var(--text2); line-height: 1.45; }
+.ffl-card .dealer-notes p { margin: 0 0 4px; }
+.ffl-card .dealer-notes ul, .ffl-card .dealer-notes ol { margin: 4px 0 4px 18px; padding: 0; }
+.ffl-card .dealer-notes a { color: var(--accent); }
+.ffl-card .dealer-notes b, .ffl-card .dealer-notes strong { color: var(--text); }
 
 /* ===== "NEW VERSION AVAILABLE" UPDATE BANNER ===== */
 .update-banner {
