@@ -154,7 +154,22 @@
         </div>
         <div class="form-group"><label>Round Count at Entry</label><input type="number" id="mRoundCount" min="0"></div>
         <div class="form-group"><label>Parts Used</label><input type="text" id="mParts" placeholder="e.g. Spring, Extractor"></div>
-        <div class="form-group full"><label>Description</label><textarea id="mDescription" placeholder="Details of maintenance work..."></textarea></div>
+        <div class="form-group full"><label>Description</label>
+          <div class="rte-wrapper">
+            <div class="rte-toolbar">
+              <button type="button" title="Bold" onmousedown="event.preventDefault()" onclick="rteCmd('bold')"><b>B</b></button>
+              <button type="button" title="Italic" onmousedown="event.preventDefault()" onclick="rteCmd('italic')"><i>I</i></button>
+              <button type="button" title="Underline" onmousedown="event.preventDefault()" onclick="rteCmd('underline')"><u>U</u></button>
+              <div class="sep"></div>
+              <button type="button" title="Bullet List" onmousedown="event.preventDefault()" onclick="rteCmd('insertUnorderedList')">&#8226; List</button>
+              <button type="button" title="Numbered List" onmousedown="event.preventDefault()" onclick="rteCmd('insertOrderedList')">1. List</button>
+              <div class="sep"></div>
+              <button type="button" title="Link" onmousedown="event.preventDefault()" onclick="rteLink()">&#128279; Link</button>
+              <button type="button" title="Remove Formatting" onmousedown="event.preventDefault()" onclick="rteCmd('removeFormat')">Clear</button>
+            </div>
+            <div class="rte-content" id="mDescription" contenteditable="true" data-placeholder="Details of maintenance work..."></div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -547,7 +562,22 @@
             <div class="form-group"><label>Buyer / Recipient</label><input type="text" id="fDispBuyer" placeholder="Name"></div>
             <div class="form-group"><label>Sale Price ($)</label><input type="number" id="fDispPrice" placeholder="0.00" step="0.01"></div>
             <div class="form-group"><label>FFL Dealer</label><input type="text" id="fDispFFL" placeholder="Dealer name (if applicable)"></div>
-            <div class="form-group full"><label>Disposition Notes</label><textarea id="fDispNotes" placeholder="Additional disposition details..."></textarea></div>
+            <div class="form-group full"><label>Disposition Notes</label>
+              <div class="rte-wrapper">
+                <div class="rte-toolbar">
+                  <button type="button" title="Bold" onmousedown="event.preventDefault()" onclick="rteCmd('bold')"><b>B</b></button>
+                  <button type="button" title="Italic" onmousedown="event.preventDefault()" onclick="rteCmd('italic')"><i>I</i></button>
+                  <button type="button" title="Underline" onmousedown="event.preventDefault()" onclick="rteCmd('underline')"><u>U</u></button>
+                  <div class="sep"></div>
+                  <button type="button" title="Bullet List" onmousedown="event.preventDefault()" onclick="rteCmd('insertUnorderedList')">&#8226; List</button>
+                  <button type="button" title="Numbered List" onmousedown="event.preventDefault()" onclick="rteCmd('insertOrderedList')">1. List</button>
+                  <div class="sep"></div>
+                  <button type="button" title="Link" onmousedown="event.preventDefault()" onclick="rteLink()">&#128279; Link</button>
+                  <button type="button" title="Remove Formatting" onmousedown="event.preventDefault()" onclick="rteCmd('removeFormat')">Clear</button>
+                </div>
+                <div class="rte-content" id="fDispNotes" contenteditable="true" data-placeholder="Additional disposition details..."></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -711,7 +741,22 @@
         </div>
         <div class="form-group full"><label>Dealer / Source</label><input type="text" id="wDealer" placeholder="e.g. Silencer Shop, local FFL"></div>
         <div class="form-group full"><label>URL / Link</label><input type="url" id="wURL" placeholder="https://..."></div>
-        <div class="form-group full"><label>Notes</label><textarea id="wNotes" placeholder="Why you want this, details..."></textarea></div>
+        <div class="form-group full"><label>Notes</label>
+          <div class="rte-wrapper">
+            <div class="rte-toolbar">
+              <button type="button" title="Bold" onmousedown="event.preventDefault()" onclick="rteCmd('bold')"><b>B</b></button>
+              <button type="button" title="Italic" onmousedown="event.preventDefault()" onclick="rteCmd('italic')"><i>I</i></button>
+              <button type="button" title="Underline" onmousedown="event.preventDefault()" onclick="rteCmd('underline')"><u>U</u></button>
+              <div class="sep"></div>
+              <button type="button" title="Bullet List" onmousedown="event.preventDefault()" onclick="rteCmd('insertUnorderedList')">&#8226; List</button>
+              <button type="button" title="Numbered List" onmousedown="event.preventDefault()" onclick="rteCmd('insertOrderedList')">1. List</button>
+              <div class="sep"></div>
+              <button type="button" title="Link" onmousedown="event.preventDefault()" onclick="rteLink()">&#128279; Link</button>
+              <button type="button" title="Remove Formatting" onmousedown="event.preventDefault()" onclick="rteCmd('removeFormat')">Clear</button>
+            </div>
+            <div class="rte-content" id="wNotes" contenteditable="true" data-placeholder="Why you want this, details..."></div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
