@@ -71,6 +71,7 @@ const CloudSync = {
       (f.images || []).forEach(id => keys.add(id));
       let k = refKey(f.receipt); if (k) keys.add(k);
       k = refKey(f.stampPdf);    if (k) keys.add(k);
+      (f.documents || []).forEach(d => keys.add('doc:' + f.id + ':' + d.id));
     });
     (db.ammo || []).forEach(a => { const k = refKey(a.receipt); if (k) keys.add(k); });
     (db.accessories || []).forEach(a => { const k = refKey(a.receipt); if (k) keys.add(k); });
@@ -81,6 +82,12 @@ const CloudSync = {
   applyMedia(key, dataURL) {
     if (key.indexOf(':') === -1) { imagesDb[key] = dataURL; return; } // photo
     const parts = key.split(':');                                     // type:kind:id
+    if (parts[0] === 'doc') {                                         // doc:firearmId:docId
+      const fr = (db.firearms || []).find(x => x.id === parts[1]);
+      const doc = fr && (fr.documents || []).find(d => d.id === parts[2]);
+      if (doc) doc.data = dataURL;
+      return;
+    }
     const type = parts[0], kind = parts[1], id = parts.slice(2).join(':');
     const arr = kind === 'firearm' ? db.firearms
               : kind === 'ammo' ? db.ammo
@@ -105,6 +112,7 @@ const CloudSync = {
     (db.firearms || []).forEach(f => {
       grab(f, 'firearm');
       if (isData(f.stampPdf)) media['stamp:firearm:' + f.id] = f.stampPdf;
+      (f.documents || []).forEach(d => { if (isData(d.data)) media['doc:' + f.id + ':' + d.id] = d.data; });
     });
     (db.ammo || []).forEach(a => grab(a, 'ammo'));
     (db.accessories || []).forEach(a => grab(a, 'accessory'));
@@ -122,6 +130,7 @@ const CloudSync = {
     (s.firearms || []).forEach(f => {
       strip(f, 'firearm');
       if (isData(f.stampPdf)) f.stampPdf = '@media:stamp:firearm:' + f.id;
+      (f.documents || []).forEach(d => { if (isData(d.data)) delete d.data; });
     });
     (s.ammo || []).forEach(a => strip(a, 'ammo'));
     (s.accessories || []).forEach(a => strip(a, 'accessory'));

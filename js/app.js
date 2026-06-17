@@ -21,6 +21,7 @@ let editingAmmoId = null;
 let currentTab = 'all';
 let currentView = 'cards';
 let tempImages = [];
+let tempDocs = [];
 let tempTags = [];
 let tempStampPdf = null;
 let tempStampPdfName = null;
@@ -1134,6 +1135,7 @@ function clearForm() {
   toggleNFAFields();
   toggleDispositionFields();
   tempImages=[];
+  tempDocs=[]; renderDocList();
   tempTags=[];
   tempStampPdf=null;
   tempStampPdfName=null;
@@ -1184,6 +1186,8 @@ function populateForm(f) {
   toggleDispositionFields();
 
   tempImages = f.images ? [...f.images] : [];
+  tempDocs = f.documents ? f.documents.map(d => ({ id: d.id, name: d.name, type: d.type, data: d.data })) : [];
+  renderDocList();
   tempTags = f.tags ? [...f.tags] : [];
   document.getElementById('fRoundCount').value = f.roundCount || '';
   document.getElementById('fWarrantyExp').value = f.warrantyExp || '';
@@ -1252,6 +1256,7 @@ async function saveFirearm() {
     maintenanceLog: editingId ? (oldData?.maintenanceLog || []) : [],
     receipt: tempReceipts.f,
     receiptName: tempReceipts.fName,
+    documents: tempDocs.map(d => ({ id: d.id, name: d.name, type: d.type, data: d.data })),
     roundCount: parseInt(document.getElementById('fRoundCount').value) || 0,
     warrantyExp: document.getElementById('fWarrantyExp').value || null,
     customFields: tempCustomFields.filter(cf => cf.name && cf.value)
@@ -1345,6 +1350,34 @@ function handleReceiptUpload(e, prefix) {
 }
 
 function removeReceipt(prefix) { tempReceipts[prefix] = null; tempReceipts[prefix + 'Name'] = null; resetReceiptUpload(prefix); }
+
+// ---- Documents (multiple per firearm) ----
+function handleDocUpload(e) {
+  const files = Array.from(e.target.files || []);
+  let pending = files.length;
+  files.forEach(file => {
+    const r = new FileReader();
+    r.onload = (ev) => {
+      tempDocs.push({ id: generateId(), name: file.name, type: file.type, data: ev.target.result });
+      if (--pending <= 0) renderDocList();
+      else renderDocList();
+    };
+    r.readAsDataURL(file);
+  });
+  e.target.value = '';
+}
+function removeDoc(id) { tempDocs = tempDocs.filter(d => d.id !== id); renderDocList(); }
+function renderDocList() {
+  const el = document.getElementById('docList');
+  if (!el) return;
+  if (!tempDocs.length) { el.innerHTML = ''; return; }
+  el.innerHTML = tempDocs.map(d => {
+    const isPdf = (d.name || '').toLowerCase().endsWith('.pdf') || d.type === 'application/pdf';
+    return `<div class="doc-chip"><span class="doc-chip-icon">${isPdf ? '&#128196;' : '&#129534;'}</span>
+      <span class="doc-chip-name">${esc(d.name || 'document')}</span>
+      <button type="button" class="doc-chip-x" onclick="removeDoc('${d.id}')" title="Remove">&times;</button></div>`;
+  }).join('');
+}
 function resetReceiptUpload(prefix) { document.getElementById(prefix + 'ReceiptUploadArea').innerHTML = '<span class="upload-text">Click to upload receipt</span>'; }
 function showReceiptInUploadArea(prefix, data, name) {
   if (!data) { resetReceiptUpload(prefix); return; }
@@ -1747,6 +1780,20 @@ function openDetail(id) {
     </div>`;
   }
 
+  let docsH = '';
+  if (f.documents && f.documents.length > 0) {
+    docsH = '<div class="detail-section"><h3>Documents (' + f.documents.length + ')</h3><div class="doc-list">';
+    f.documents.forEach(d => {
+      const isPdf = (d.name || '').toLowerCase().endsWith('.pdf') || d.type === 'application/pdf';
+      const icon = isPdf ? '&#128196;' : '&#129534;';
+      const open = d.data ? `<a class="doc-open" href="${d.data}" target="_blank" rel="noopener" onclick="event.stopPropagation();">View</a>
+        <a class="doc-open" href="${d.data}" download="${esc(d.name||'document')}" onclick="event.stopPropagation();">Download</a>`
+        : '<span style="color:var(--text3);font-size:0.78rem;">syncing…</span>';
+      docsH += `<div class="doc-chip"><span class="doc-chip-icon">${icon}</span><span class="doc-chip-name">${esc(d.name||'document')}</span>${open}</div>`;
+    });
+    docsH += '</div></div>';
+  }
+
   document.getElementById('detailBody').innerHTML=`
     <h2>${esc(f.make||'')} ${esc(f.model||'')}</h2>
     <div class="sub">${esc(f.type||'')} &middot; ${esc(f.caliber||'')}${tagsH}</div>
@@ -1760,7 +1807,7 @@ function openDetail(id) {
       <div class="detail-field"><label>Round Count</label><span>${f.roundCount||0}</span></div>
       <div class="detail-field"><label>Total Invested</label><span class="investment-badge">$${getTotalInvestment(f.id).toLocaleString()}</span></div>
       ${f.warrantyExp ? '<div class="detail-field"><label>Warranty</label><span class="warranty-'+getWarrantyStatus(f.warrantyExp)+'">'+(getWarrantyStatus(f.warrantyExp)==='expired'?'EXPIRED':getWarrantyStatus(f.warrantyExp)==='soon'?'Expiring Soon':fmtDate(f.warrantyExp))+'</span></div>' : ''}
-    </div>${(f.customFields&&f.customFields.length>0)?'<div class="detail-section"><h3>Custom Fields</h3><div class="detail-grid">'+f.customFields.map(cf=>'<div class="detail-field"><label>'+esc(cf.name)+'</label><span>'+esc(cf.value)+'</span></div>').join('')+'</div></div>':''}${tagsH?'':''}${notesH}${receiptH}${dispositionH}${nfaH}${compatAmmo}${accessoriesH}${maintenanceH}`;
+    </div>${(f.customFields&&f.customFields.length>0)?'<div class="detail-section"><h3>Custom Fields</h3><div class="detail-grid">'+f.customFields.map(cf=>'<div class="detail-field"><label>'+esc(cf.name)+'</label><span>'+esc(cf.value)+'</span></div>').join('')+'</div></div>':''}${tagsH?'':''}${notesH}${receiptH}${docsH}${dispositionH}${nfaH}${compatAmmo}${accessoriesH}${maintenanceH}`;
 
   currentImageIndex = 0;
   document.getElementById('detailQRBtn').onclick=()=>{generateQR(id);};
