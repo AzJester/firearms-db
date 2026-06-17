@@ -4,6 +4,9 @@
 *_database*.json
 firearms_full_backup.json
 *.json
+# ...but the project's own config files are NOT data and must be committed:
+!package.json
+!package-lock.json
 !manifest.webmanifest
 *.zip
 *.csv
