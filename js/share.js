@@ -5,7 +5,7 @@
   const token = new URLSearchParams(location.search).get('t');
 
   const esc = (s) => { const d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; };
-  const money = (n) => '$' + (Number(n) || 0).toLocaleString();
+  const money = (n) => '$' + (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtDate = (d) => { if (!d) return '--'; const x = new Date(d); return isNaN(x) ? '--' : x.toLocaleDateString(); };
   const msg = (m) => { view.innerHTML = '<div class="sv-msg">' + esc(m) + '</div>'; };
 
