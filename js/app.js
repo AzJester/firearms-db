@@ -66,6 +66,29 @@ function toast(message, type, timeout) {
 window.toast = toast;
 
 // =====================================================
+// IMAGE LIGHTBOX
+// =====================================================
+function openLightbox(src) {
+  const lb = document.getElementById('lightbox');
+  const img = document.getElementById('lightboxImg');
+  if (!lb || !img || !src) return;
+  img.src = src;
+  lb.style.display = 'flex';
+}
+function closeLightbox() {
+  const lb = document.getElementById('lightbox');
+  if (lb) { lb.style.display = 'none'; const i = document.getElementById('lightboxImg'); if (i) i.src = ''; }
+}
+window.openLightbox = openLightbox;
+window.closeLightbox = closeLightbox;
+// Click any detail-view photo to open it full-screen
+document.addEventListener('click', (e) => {
+  const t = e.target;
+  if (t && t.classList && t.classList.contains('detail-img')) { e.stopPropagation(); openLightbox(t.src); }
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
+
+// =====================================================
 // INDEXEDDB IMAGE STORAGE
 // =====================================================
 function openImageDB() {
@@ -617,8 +640,12 @@ function setView(v) {
 // =====================================================
 // DASHBOARD
 // =====================================================
+let _dashCharts = [];
+function _destroyDashCharts() { _dashCharts.forEach(c => { try { c.destroy(); } catch (e) {} }); _dashCharts = []; }
+
 function renderDashboard() {
   const container = document.getElementById('dashboardContainer');
+  _destroyDashCharts();
   const active = db.firearms.filter(f => !f.status || f.status === 'Active');
   const totalFirearms = active.length;
   const fVal = active.reduce((s, f) => s + (parseFloat(f.price) || 0), 0);
@@ -673,7 +700,41 @@ function renderDashboard() {
   ).join('');
   if (!tagsList) tagsList = '<div style="color:var(--text3);font-size:0.82rem;padding:8px;">No tags assigned yet.</div>';
 
-  container.innerHTML = `
+  // Manufacturer breakdown (top 8 by make)
+  const makes = {};
+  active.forEach(f => { const m = (f.make || 'Unknown').trim() || 'Unknown'; makes[m] = (makes[m] || 0) + 1; });
+  const makeEntries = Object.entries(makes).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const maxMakeCount = Math.max(...makeEntries.map(e => e[1]), 1);
+  const mfgChart = makeEntries.map(([m, n]) =>
+    `<div class="dash-bar-row"><span class="dash-bar-label">${esc(m)}</span><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${(n / maxMakeCount * 100).toFixed(1)}%;background:#7e57c2;"></div></div><span class="dash-bar-val">${n}</span></div>`
+  ).join('');
+
+  // KPI cards
+  const nfaCount = active.filter(f => f.isNFA).length;
+  const kpis = [
+    { icon: '&#128737;', label: 'Active Firearms', value: totalFirearms },
+    { icon: '&#128176;', label: 'Collection Value', value: '$' + totalVal.toLocaleString() },
+    { icon: '&#128196;', label: 'NFA Items', value: nfaCount },
+    { icon: '&#127919;', label: 'Total Rounds', value: totalAmmoRounds.toLocaleString() },
+    { icon: '&#128230;', label: 'Accessories', value: db.accessories.length }
+  ];
+  const kpiRow = `<div class="dash-card dash-kpi-card"><div class="dash-kpis">` +
+    kpis.map(k => `<div class="dash-kpi"><div class="dash-kpi-icon">${k.icon}</div><div class="dash-kpi-text"><div class="dash-kpi-value">${k.value}</div><div class="dash-kpi-label">${k.label}</div></div></div>`).join('') +
+    `</div></div>`;
+
+  const hist = (db.valueHistory || []).slice(-60);
+  const hasValueChart = hist.length >= 2;
+
+  container.innerHTML = kpiRow + `
+    <div class="dash-card dash-wide">
+      <h3>Collection Value Over Time</h3>
+      ${hasValueChart ? '<div class="dash-chart-wrap"><canvas id="valueChartCanvas"></canvas></div>'
+        : '<div style="color:var(--text3);font-size:0.82rem;padding:8px;">Value history builds over time — check back after a few days of use.</div>'}
+    </div>
+    <div class="dash-card">
+      <h3>Top Manufacturers</h3>
+      <div class="dash-bar-chart">${mfgChart || '<div style="color:var(--text3);font-size:0.82rem;">No data.</div>'}</div>
+    </div>
     <div class="dash-card">
       <h3>Collection Overview</h3>
       <div class="dash-big-num">${totalFirearms}</div>
@@ -726,6 +787,43 @@ function renderDashboard() {
       <div class="dash-list">${tagsList}</div>
     </div>
   `;
+
+  // Render the value-over-time line chart (Chart.js). Degrades gracefully.
+  if (hasValueChart && window.Chart) {
+    const canvas = document.getElementById('valueChartCanvas');
+    if (canvas) {
+      const css = getComputedStyle(document.body);
+      const accent = (css.getPropertyValue('--accent') || '#1a3a5c').trim();
+      const grid = (css.getPropertyValue('--border-light') || '#e8eaed').trim();
+      const text = (css.getPropertyValue('--text2') || '#5f6368').trim();
+      try {
+        const chart = new Chart(canvas, {
+          type: 'line',
+          data: {
+            labels: hist.map(h => h.date),
+            datasets: [{
+              label: 'Collection value',
+              data: hist.map(h => h.value),
+              borderColor: accent,
+              backgroundColor: accent + '22',
+              fill: true, tension: 0.3, pointRadius: hist.length > 30 ? 0 : 3,
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false },
+              tooltip: { callbacks: { label: c => '$' + Number(c.parsed.y).toLocaleString() } } },
+            scales: {
+              x: { grid: { color: grid }, ticks: { color: text, maxTicksLimit: 8 } },
+              y: { grid: { color: grid }, ticks: { color: text, callback: v => '$' + Number(v).toLocaleString() } }
+            }
+          }
+        });
+        _dashCharts.push(chart);
+      } catch (e) { console.warn('value chart failed', e); }
+    }
+  }
 }
 
 // =====================================================
