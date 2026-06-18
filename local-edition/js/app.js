@@ -2607,81 +2607,20 @@ function toggleDealerFavorite(id) {
 }
 
 // ---- Bulk import -------------------------------------------------------
-// Curated Arizona starter list (public business listings). FFL license
-// numbers are intentionally blank — they must be verified per-dealer via the
-// ATF FFL eZ Check, so we never store an unverified number. Each dealer card
-// gets a "Look up FFL #" link to find the current, authoritative number.
-const AZ_FFL_DEALERS = [
-  // Yuma
-  { name: "Sprague's Sports", phone: "(928) 726-0022", address: "345 W 32nd St, Yuma, AZ 85364", website: "https://www.spragues.com", notes: "Gun store, indoor range & CCW classes." },
-  { name: "Sportsman's Warehouse #181", phone: "(928) 615-3200", address: "1038 S Castle Dome Ave, Yuma, AZ 85365", website: "https://www.sportsmans.com", notes: "Outdoor sporting goods & firearms." },
-  { name: "C-A-L Ranch Stores (Yuma)", phone: "(928) 343-7700", address: "529 W 32nd St, Yuma, AZ 85364", website: "https://www.calranch.com", notes: "Ranch & farm retailer with firearms counter." },
-  { name: "Caliber Arms and Ammo", phone: "(928) 371-7019", address: "11274 S Fortuna Rd, Ste D1, Yuma, AZ 85367", website: "https://www.caliberarmsandammo.com", notes: "Local gun shop in the Foothills." },
-  { name: "Hiram's Guns", phone: "(928) 955-3838", address: "801 W 32nd St, Yuma, AZ 85364", website: "", notes: "Firearms & accessories." },
-  { name: "Big 5 Sporting Goods (Yuma)", phone: "(928) 726-2884", address: "505 W Catalina Dr, Yuma, AZ 85364", website: "https://www.big5sportinggoods.com", notes: "Sporting goods retailer." },
-  { name: "2nd Amendment Hardware", phone: "(928) 446-1916", address: "4262 E Hwy 80, Yuma, AZ 85365", website: "", notes: "" },
-  { name: "5 Shot Firearms", phone: "(928) 941-0867", address: "11640 S Glenwood Ave, Yuma, AZ 85367", website: "https://5shotfirearms.com", notes: "Family-owned gun store." },
-  { name: "Blue Phantom", phone: "(928) 581-5407", address: "1209 W 18th Pl, Yuma, AZ 85364", website: "", notes: "" },
-  { name: "Patcho Villa Gun Works", phone: "", address: "2405 S 27th Ave, Yuma, AZ 85364", website: "", notes: "" },
-  // Phoenix metro
-  { name: "Shooter's World", phone: "(602) 266-2600", address: "3828 N 28th Ave, Phoenix, AZ 85017", website: "https://www.azshootersworld.com", notes: "Firearms, indoor range & training." },
-  { name: "Shooter's World (Peoria)", phone: "(623) 776-7200", address: "8966 W Cactus Rd, Peoria, AZ 85381", website: "https://www.azshootersworld.com", notes: "West-valley range & gun store." },
-  { name: "Legendary Guns", phone: "", address: "5130 N 19th Ave, Phoenix, AZ 85015", website: "https://legendaryguns.com", notes: "Class III/NFA, gunsmithing, appraisals." },
-  { name: "Tactical Armory", phone: "(602) 488-3607", address: "5602 E Calle Camelia, Phoenix, AZ 85018", website: "", notes: "Firearms & transfers." },
-  { name: "Tombstone Tactical", phone: "(800) 606-0370", address: "10005 N Metro Pkwy E, Phoenix, AZ 85051", website: "https://tombstonetactical.com", notes: "Firearms retailer & online sales." },
-  { name: "Scottsdale Gun Club", phone: "", address: "14860 N Northsight Blvd, Scottsdale, AZ 85260", website: "https://scottsdalegunclub.com", notes: "Retail & members indoor range." },
-  { name: "Caswells Shooting Range", phone: "(480) 497-5141", address: "856 E Isabella Ave, Mesa, AZ 85204", website: "https://shop.caswells.com", notes: "Retail, range & training." },
-  { name: "Arizona Firearms (Tempe)", phone: "(480) 968-7481", address: "1315 W University Dr, Tempe, AZ 85281", website: "https://www.arizona-firearms.com", notes: "Long-running East Valley gun shop." },
-  { name: "Arizona Firearms (Chandler)", phone: "(480) 718-5132", address: "1965 S Alma School Rd, Unit 5, Chandler, AZ 85286", website: "https://www.arizona-firearms.com", notes: "East Valley gun shop." },
-  { name: "AZ Guns", phone: "(480) 745-2588", address: "961 W Ray Rd, Ste 8, Chandler, AZ 85225", website: "https://azguns.com", notes: "Low FFL transfer fees, veteran discounts." },
-  { name: "C2 Tactical", phone: "", address: "10000 N 90th St, Scottsdale, AZ 85258", website: "https://c2tactical.com", notes: "Range & retail (Scottsdale & Tempe)." },
-  // Tucson
-  { name: "Murphy's Guns & Gunsmithing", phone: "(520) 881-7074", address: "3235 N Country Club Rd, Tucson, AZ 85716", website: "https://www.murphysgunshop.com", notes: "Gun shop & gunsmithing." },
-  { name: "Diamondback Shooting Sports & Police Supply", phone: "", address: "7030 E Broadway Blvd, Tucson, AZ 85710", website: "https://dbackshootingsports.com", notes: "Retail, range & police supply." },
-  { name: "The Hub Tucson", phone: "(520) 274-7908", address: "1400 S Alvernon Way, Tucson, AZ 85711", website: "https://www.thehubaz.com", notes: "Gun store, indoor range & CCW training." },
-  { name: "Bass Pro Shops (Tucson)", phone: "", address: "1500 E Tucson Marketplace Blvd, Tucson, AZ 85713", website: "https://www.basspro.com", notes: "Outdoor retailer with firearms." },
-  { name: "SNG Tactical", phone: "", address: "3441 S Palo Verde Rd, Tucson, AZ 85713", website: "https://www.sngtactical.com", notes: "Firearms & tactical gear." },
-  { name: "James410 LLC", phone: "(520) 345-7526", address: "8963 E Tanque Verde Rd, Ste 195, Tucson, AZ 85749", website: "https://james410llc.com", notes: "Firearms sales & transfers." },
-  { name: "The Armament Shop", phone: "", address: "8251 E Sabino Dr, Tucson, AZ 85750", website: "", notes: "" },
-  { name: "Specialized Firearms Supply", phone: "", address: "7880 E Wild Mustang Pl, Tucson, AZ 85750", website: "", notes: "" },
-  { name: "520 Tactical", phone: "", address: "5051 E 29th St, Tucson, AZ 85711", website: "", notes: "" },
-  { name: "C-A-L Ranch Stores (Tucson)", phone: "", address: "6363 E 22nd St, Tucson, AZ 85710", website: "https://www.calranch.com", notes: "Ranch & farm retailer with firearms counter." },
-  { name: "AZ Arms and Antiques", phone: "(520) 471-3244", address: "3033 W Gymkhana Way, Tucson, AZ 85742", website: "", notes: "Firearms & antiques." },
-  // Northern AZ (Flagstaff, Prescott, Verde Valley, Rim Country)
-  { name: "2nd Amendment Store", phone: "(928) 266-0683", address: "2500 S Woodlands Village Blvd #25, Flagstaff, AZ 86001", website: "https://2astore.com", notes: "Firearms & sporting goods." },
-  { name: "Arizona Collectibles and Firearms", phone: "(928) 310-8544", address: "9900 E Wapiti Trl, Flagstaff, AZ 86004", website: "", notes: "Firearms & collectibles." },
-  { name: "C-A-L Ranch Stores (Flagstaff)", phone: "", address: "2530 N 4th St, Flagstaff, AZ 86004", website: "https://www.calranch.com", notes: "Ranch & farm retailer with firearms counter." },
-  { name: "Royal Ordnance", phone: "(928) 445-1735", address: "1344 Gifford Dr, Prescott, AZ 86305", website: "", notes: "Firearms dealer." },
-  { name: "Sirius Arms", phone: "(928) 275-2535", address: "1201 Iron Springs Rd #7, Prescott, AZ 86305", website: "", notes: "Firearms dealer." },
-  { name: "Sport Shooters Supply", phone: "(928) 713-0457", address: "1929 Ventnor Cir, Prescott, AZ 86301", website: "", notes: "Firearms & ammo." },
-  { name: "Hamilton & Son's Firearms", phone: "", address: "475 S Airpark Rd, Ste 1, Cottonwood, AZ 86326", website: "https://hamiltonfirearms.com", notes: "Verde Valley gun shop." },
-  { name: "Smoke-N-Guns", phone: "(928) 634-3216", address: "322 S Main St, Cottonwood, AZ 86326", website: "https://www.smokenguns.com", notes: "Verde Valley gun shop." },
-  { name: "Rim Country Guns", phone: "(928) 474-8000", address: "513 S Beeline Hwy, Payson, AZ 85541", website: "", notes: "Rim Country gun shop." },
-  // Western AZ (Lake Havasu, Kingman, Bullhead City)
-  { name: "Southwest Firearms", phone: "", address: "2148 McCulloch Blvd N #101, Lake Havasu City, AZ 86403", website: "https://southwestfirearm.com", notes: "Gun shop, gunsmith & CCW classes." },
-  { name: "Sierra 1 Guns and Gear", phone: "", address: "3045 Daytona Ave, Lake Havasu City, AZ 86403", website: "", notes: "Firearms & gear." },
-  { name: "Citadel Armory", phone: "", address: "1605 Neptune Dr, Lake Havasu City, AZ 86404", website: "", notes: "Firearms dealer." },
-  { name: "The Gun Shop (Kingman)", phone: "(928) 681-4570", address: "4938 N Stockton Hill Rd, Kingman, AZ 86409", website: "", notes: "Local gun shop." },
-  { name: "TAC50", phone: "", address: "2124 Hwy 95, Ste A, Bullhead City, AZ 86442", website: "https://tac50.com", notes: "Buys & sells guns, gold & silver." },
-  { name: "Mohave Armory", phone: "", address: "1699 Hwy 95, Bullhead City, AZ 86442", website: "https://mohavearmoryaz.com", notes: "Full-service gun shop." },
-  // Southern AZ (Sierra Vista, Casa Grande)
-  { name: "Apocalypse Arms and Military Surplus", phone: "(520) 458-9133", address: "101 W Fry Blvd, Sierra Vista, AZ 85635", website: "", notes: "Firearms & military surplus." },
-  { name: "King's Armory", phone: "", address: "65 S Highway 92, Suite C, Sierra Vista, AZ 85635", website: "", notes: "Firearms dealer." },
-  { name: "Denny's Shooting Sports", phone: "", address: "2248 Baywood Ln, Sierra Vista, AZ 85635", website: "", notes: "Firearms & shooting sports." },
-  { name: "C-A-L Ranch Stores (Sierra Vista)", phone: "", address: "673 N Highway 90, Sierra Vista, AZ 85635", website: "https://www.calranch.com", notes: "Ranch & farm retailer with firearms counter." },
-  { name: "1789 Arms", phone: "(928) 307-1789", address: "206 W Caribbean Dr, Casa Grande, AZ 85122", website: "", notes: "Firearms dealer." },
-  { name: "Desert Vista Gun Sales", phone: "(602) 206-3452", address: "8959 S Valley Vista Dr, Casa Grande, AZ 85193", website: "", notes: "Firearms dealer & transfers." },
-  { name: "Elegant Arms", phone: "(520) 233-6971", address: "1216 E Palo Verde Dr, Casa Grande, AZ 85122", website: "", notes: "Firearms dealer." },
-  // Additional towns — White Mountains, I-40 corridor, Colorado River, southeast
-  { name: "Sharp Shooters", phone: "(928) 536-3555", address: "1362 E Snowflake Blvd, Snowflake, AZ 85937", website: "", notes: "Family-owned White Mountains gun shop." },
-  { name: "Sportsman's Warehouse (Show Low)", phone: "", address: "4421 S White Mountain Rd, Show Low, AZ 85901", website: "https://www.sportsmans.com", notes: "Outdoor sporting goods & firearms." },
-  { name: "B&B Gunsmithing", phone: "(928) 386-9053", address: "514 W Elm St, Winslow, AZ 86047", website: "", notes: "Gunsmith & firearms dealer." },
-  { name: "High Country Ammunition & Firearms", phone: "(602) 751-4830", address: "2700 Scenic View Dr, Winslow, AZ 86047", website: "", notes: "Ammo & firearms." },
-  { name: "Gold Pan Dan's Guns & Gold", phone: "(928) 669-3079", address: "820 S California Ave, Ste 109, Parker, AZ 85344", website: "https://goldpandansgunsandgold.com", notes: "Guns & gold on the Colorado River." },
-  { name: "AZ 2nd Amendment Outfitters", phone: "(520) 397-7737", address: "1070 E Valle Vista Dr, Nogales, AZ 85621", website: "", notes: "Firearms outfitter." },
-  { name: "Arizona Guns and Ammo", phone: "(928) 424-4570", address: "520 W 5th St, Safford, AZ 85546", website: "", notes: "Gun & ammo shop." },
-  { name: "Taking Aim Guns and Ammo", phone: "(928) 228-8822", address: "1122 W Thatcher Blvd, Safford, AZ 85546", website: "https://takingaimgunsandammo.com", notes: "Gun & ammo shop." },
-  { name: "Q's Gun & Supply", phone: "", address: "7648 S Chuckwagon, Safford, AZ 85546", website: "http://www.qgunsupply.com", notes: "Firearms & supply." }
+// FICTIONAL sample dealers — included only to demonstrate the import and the
+// dealer-directory features. Every name, address, and phone number is made up
+// (555 phone prefix and placeholder "Anytown, ST 00000" addresses). FFL license
+// numbers are intentionally blank; real ones must be verified via the ATF FFL
+// eZ Check. Each dealer card gets a "Look up FFL #" link.
+const SAMPLE_FFL_DEALERS = [
+  { name: "Cedar Creek Firearms", phone: "(555) 012-3401", address: "100 Main St, Anytown, ST 00000", website: "https://example.com", notes: "Sample dealer — full-service gun shop & transfers." },
+  { name: "Liberty Arms & Indoor Range", phone: "(555) 012-3402", address: "248 Range Rd, Lake Haven, ST 00000", website: "https://example.com", notes: "Sample dealer — retail, indoor range & CCW classes." },
+  { name: "Old Glory Gun Co.", phone: "(555) 012-3403", address: "57 Liberty Ave, Cedar Falls, ST 00000", website: "", notes: "Sample dealer — sporting & hunting firearms." },
+  { name: "Frontier Defense & Supply", phone: "(555) 012-3404", address: "1203 Frontier Blvd, Pine Ridge, ST 00000", website: "https://example.com", notes: "Sample dealer — tactical gear & NFA items." },
+  { name: "Summit Outfitters", phone: "(555) 012-3405", address: "9 Summit Way, Riverbend, ST 00000", website: "", notes: "Sample dealer — outdoor outfitter with a firearms counter." },
+  { name: "Patriot Pawn & Firearms", phone: "(555) 012-3406", address: "640 Commerce St, Fort Sterling, ST 00000", website: "", notes: "Sample dealer — buys, sells & transfers." },
+  { name: "Ironwood Tactical", phone: "(555) 012-3407", address: "315 Industrial Pkwy, Junction City, ST 00000", website: "https://example.com", notes: "Sample dealer — gunsmithing & custom builds." },
+  { name: "Lakeside Sporting Goods", phone: "(555) 012-3408", address: "82 Harbor Dr, Bayport, ST 00000", website: "", notes: "Sample dealer — sporting goods & ammunition." }
 ];
 
 function _dealerKey(d) { return ((d.name || '') + '|' + (d.address || '')).toLowerCase().replace(/\s+/g, ' ').trim(); }
@@ -2722,8 +2661,8 @@ function openDealerImportModal() {
 }
 function closeDealerImportModal() { document.getElementById('dealerImportModal').classList.remove('open'); }
 
-async function loadAZDealers() {
-  const r = mergeDealers(AZ_FFL_DEALERS);
+async function loadSampleDealers() {
+  const r = mergeDealers(SAMPLE_FFL_DEALERS);
   if (r.added) { await saveData(); render(); }
   closeDealerImportModal();
   toast(r.added + ' dealer' + (r.added === 1 ? '' : 's') + ' added' + (r.skipped ? ', ' + r.skipped + ' already present' : '') + '.');
@@ -2745,15 +2684,13 @@ async function importDealersFromText() {
 // ---- Dealer filtering --------------------------------------------------
 let _dealerFilterQ = '', _dealerFilterArea = 'all', _dealerSort = 'fav';
 
-// Derive a metro/area bucket from a dealer's address (and notes as a fallback).
+// Derive an area bucket from a dealer's address — the city segment — so the
+// area filter works for any list of dealers. "Street, City, ST ZIP" => "City";
+// falls back to "Other" when a city can't be determined.
 function dealerArea(d) {
-  const a = ((d.address || '') + ' ' + (d.notes || '')).toLowerCase();
-  if (a.indexOf('yuma') > -1) return 'Yuma';
-  if (/(phoenix|scottsdale|mesa|tempe|glendale|peoria|chandler|gilbert|surprise|avondale|goodyear|queen creek|fountain hills|cave creek|paradise valley|sun city)/.test(a)) return 'Phoenix';
-  if (a.indexOf('tucson') > -1 || a.indexOf('marana') > -1 || a.indexOf('oro valley') > -1 || a.indexOf('vail') > -1 || a.indexOf('sahuarita') > -1) return 'Tucson';
-  if (/(flagstaff|prescott|sedona|cottonwood|clarkdale|jerome|camp verde|payson|show low|pinetop|lakeside|snowflake|taylor|winslow|holbrook|williams|page|chino valley|dewey|humboldt)/.test(a)) return 'Northern AZ';
-  if (/(lake havasu|kingman|bullhead|fort mohave|mohave valley|golden valley|parker|quartzsite)/.test(a)) return 'Western AZ';
-  if (/(sierra vista|casa grande|nogales|douglas|bisbee|benson|willcox|green valley|maricopa|eloy|coolidge|globe|safford|thatcher)/.test(a)) return 'Southern AZ';
+  const parts = String(d.address || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (parts.length >= 3) return parts[parts.length - 2] || 'Other';
+  if (parts.length === 2) return parts[0] || 'Other';
   return 'Other';
 }
 
@@ -2797,18 +2734,19 @@ function renderDealersTab() {
     + '<span style="font-size:0.86rem;font-weight:600;">FFL Dealers: <span style="color:var(--accent);" id="dealerShownCount">' + items.length + '</span></span>'
     + '<button class="btn btn-small btn-secondary" onclick="openDealerImportModal()">⬇️ Import dealers</button>'
     + '</div>';
-  if (items.length === 0) { h += tabEmpty('🏢', 'No dealers saved yet', 'Add your go-to FFLs, or load the built-in Arizona starter list to get going fast.', '<button class="btn btn-primary" onclick="openDealerImportModal()">⬇️ Import dealers</button>'); document.getElementById('tableContainer').innerHTML = h; return; }
+  if (items.length === 0) { h += tabEmpty('🏢', 'No dealers saved yet', 'Add your go-to FFLs, or load the built-in sample dealers to see how it works.', '<button class="btn btn-primary" onclick="openDealerImportModal()">⬇️ Import dealers</button>'); document.getElementById('tableContainer').innerHTML = h; return; }
 
   // Area counts for the filter chips
   const counts = {}; items.forEach(d => { const a = dealerArea(d); counts[a] = (counts[a] || 0) + 1; });
   if (_dealerFilterArea !== 'all' && !counts[_dealerFilterArea]) _dealerFilterArea = 'all';
-  const labelFor = a => a === 'Phoenix' ? 'Phoenix Metro' : a === 'all' ? 'All' : a;
+  const labelFor = a => a === 'all' ? 'All' : a;
   const chip = (area, n) => '<button class="dealer-chip' + (_dealerFilterArea === area ? ' active' : '') + '" data-area="' + area + '" onclick="setDealerArea(\'' + area + '\')">' + labelFor(area) + ' <span class="dealer-chip-n">' + n + '</span></button>';
   let chips = chip('all', items.length);
-  ['Yuma', 'Phoenix', 'Tucson', 'Northern AZ', 'Western AZ', 'Southern AZ', 'Other'].forEach(a => { if (counts[a]) chips += chip(a, counts[a]); });
+  // Areas present, alphabetical, with "Other" last.
+  Object.keys(counts).sort((a, b) => a === 'Other' ? 1 : b === 'Other' ? -1 : a.localeCompare(b)).forEach(a => { chips += chip(a, counts[a]); });
 
   const sortSel = '<select class="dealer-sort" onchange="setDealerSort(this.value)" title="Sort dealers">'
-    + [['fav', 'Preferred first'], ['name', 'Name (A–Z)'], ['region', 'Region']].map(o =>
+    + [['fav', 'Preferred first'], ['name', 'Name (A–Z)'], ['region', 'Area']].map(o =>
         '<option value="' + o[0] + '"' + (_dealerSort === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('')
     + '</select>';
   h += '<div class="dealer-filterbar">'
@@ -2817,11 +2755,10 @@ function renderDealersTab() {
     + sortSel + '</div>';
 
   h += '<div id="dealerGrid" style="padding:16px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px;">';
-  const regionRank = { 'Yuma': 0, 'Phoenix': 1, 'Tucson': 2, 'Northern AZ': 3, 'Western AZ': 4, 'Southern AZ': 5, 'Other': 6 };
   const byName = (a, b) => (a.name || '').localeCompare(b.name || '');
   const ordered = [...items];
   if (_dealerSort === 'name') ordered.sort(byName);
-  else if (_dealerSort === 'region') ordered.sort((a, b) => ((regionRank[dealerArea(a)] ?? 9) - (regionRank[dealerArea(b)] ?? 9)) || byName(a, b));
+  else if (_dealerSort === 'region') ordered.sort((a, b) => dealerArea(a).localeCompare(dealerArea(b)) || byName(a, b));
   else ordered.sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0)); // 'fav' (default): preferred first
   ordered.forEach(d => {
     const area = dealerArea(d);
