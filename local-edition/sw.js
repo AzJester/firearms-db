@@ -2,17 +2,25 @@
 // online reload always gets the latest code, with a cached fallback offline.
 // Only same-origin requests are intercepted; CDN libraries pass straight
 // through to the network (and the browser's own HTTP cache).
-const CACHE = 'firearms-vault-local-v1';
+const CACHE = 'firearms-vault-local-v2';
 const SHELL = [
   './',
   './index.html',
   './css/styles.css',
+  './css/fonts.css',
   './js/app.js',
   './js/local-store.js',
   './manifest.webmanifest',
   './icons/icon.svg',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './vendor/chart.umd.js',
+  './vendor/xlsx.full.min.js',
+  './vendor/jspdf.umd.min.js',
+  './vendor/jspdf.plugin.autotable.min.js',
+  './vendor/qrcode.min.js',
+  './vendor/jszip.min.js',
+  './vendor/fonts/InterVariable.woff2'
 ];
 
 self.addEventListener('install', (e) => {

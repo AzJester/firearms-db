@@ -19,11 +19,17 @@ license. These notices must remain with the product.
 - Inter typeface — UI font. SIL Open Font License 1.1.
   https://rsms.me/inter/
 
-Full license texts are available at the URLs above. The MIT, Apache-2.0, and
-SIL OFL licenses permit redistribution within a commercial product provided
-their copyright and permission notices are retained — which this file does.
+The MIT, Apache-2.0, and SIL OFL licenses permit redistribution within a
+commercial product provided their copyright and permission notices are retained.
 
-NOTE: If your build loads these libraries from a public CDN (the default), the
-CDN simply serves the unmodified library code. If you vendor (bundle) them into
-this folder for fully-offline use, keep this notice and include each library's
-own LICENSE file alongside it.
+BUNDLED FOR OFFLINE USE
+All of the above except Tesseract.js are bundled (vendored) in `vendor/` as the
+unmodified, redistributable library files, so the app runs without internet.
+Each library's own license text is included under `vendor/licenses/`.
+
+ONE EXCEPTION — Tesseract.js (optional serial-number OCR) is still loaded from a
+CDN, because it additionally downloads a worker, a WebAssembly core, and
+language data at runtime. The "Scan Serial" feature therefore needs an internet
+connection; every other feature works fully offline. To make OCR offline too,
+bundle tesseract.js, tesseract.js-core, and an `eng.traineddata` file and point
+the OCR initialization at those local paths.

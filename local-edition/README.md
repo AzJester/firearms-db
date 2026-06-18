@@ -46,9 +46,11 @@ This app is a record-keeping convenience only — it is **not** legal/compliance
 advice and is **not** an official record. Always follow the laws that apply to you.
 
 ### Need internet?
-Your **data** never needs the internet. The app currently loads a few code
-libraries (charts, export, scanning) from the web the first time you open it; the
-core app still works offline and degrades gracefully if those aren't available.
+**No — the app runs fully offline.** All code libraries (charts, Excel/PDF
+export, QR codes, zip) and the Inter font are bundled in `vendor/`, and your data
+always stays on this device. The **only** feature that needs internet is the
+optional **Scan Serial (OCR)** tool, which downloads its recognition engine on
+demand. Everything else works with no connection.
 
 ---
 
@@ -70,15 +72,18 @@ any backend.
    Squeezy, itch.io) are a better fit than Etsy, whose policies restrict
    firearms-related listings and aren't built for software.
 
-**Optional hardening for a fully-offline build:**
-- Vendor the CDN libraries: download Chart.js, xlsx, jsPDF(+autotable),
-  Tesseract.js, qrcodejs, JSZip and the Inter font into this folder and update
-  the `<script>`/`<link>` tags in `index.html` to point at the local copies, so
-  the app needs zero internet. Keep `THIRD-PARTY-LICENSES.txt` and add each
-  library's own LICENSE file.
-- For a true desktop installer, wrap this folder with **Tauri** or **Electron**
-  (point the window at `index.html`). The web bundle here is exactly what such a
-  shell would load.
+**Offline status (done):**
+- The libraries and the Inter font are vendored in `vendor/` (with their license
+  texts in `vendor/licenses/`), so the app needs zero internet. The single
+  exception is the optional **Scan Serial (OCR)** tool, which still pulls its
+  engine from a CDN at runtime — to make that offline too, bundle `tesseract.js`,
+  `tesseract.js-core`, and an `eng.traineddata` file and point the OCR init at
+  local paths.
+
+**For a true desktop installer:**
+- Wrap this folder with **Tauri** or **Electron** (point the window at
+  `index.html`). Because every asset is now local, the packaged app runs with no
+  network at all.
 
 **Keeping in sync with the online edition:**
 `css/styles.css` is a byte-for-byte copy of the main app, and `js/app.js` is the
