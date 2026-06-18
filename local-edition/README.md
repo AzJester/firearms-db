@@ -86,9 +86,21 @@ any backend.
   network at all.
 
 **Keeping in sync with the online edition:**
-`css/styles.css` is a byte-for-byte copy of the main app, and `js/app.js` is the
-same except for two removed command-palette entries (the cloud-only "Share
-inventory" and "Sync now"). Core improvements port over by re-copying those
-files and re-applying that two-line removal. The only other edition-specific
-glue is `js/local-store.js` (replaces the cloud stack) and the edits in
-`index.html` (no login, no cloud/sync/share UI, sample-data onboarding, About).
+`css/styles.css` is a byte-for-byte copy of the main app. `js/app.js` is the
+same except for product-edition changes: the two cloud-only command-palette
+entries ("Share inventory" / "Sync now") are removed, and the dealer **starter
+list is fictional sample data** with a generic city-based area filter (the main
+app ships a real regional list). Core improvements port over by re-copying and
+re-applying those edits. The only other edition-specific glue is
+`js/local-store.js` (replaces the cloud stack) and the edits in `index.html`
+(no login, no cloud/sync/share UI, sample-data onboarding, About).
+
+### Demo / sample data
+This build ships with **no real data** — no personal collection, no Supabase
+keys, no embedded photos. The only bundled content is fictional, clearly-labeled
+sample data to demonstrate the app:
+- A first-run prompt can load 3 sample firearms + 1 sample ammo entry (placeholder
+  serials like `SAMPLE-0001`).
+- The dealer import offers "Load sample dealers" — 8 invented FFLs with `555`
+  phone numbers and `Anytown, ST 00000` addresses.
+All of it is meant to be edited or deleted by the buyer.
