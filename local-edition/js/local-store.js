@@ -304,8 +304,14 @@
   }
 
   function boot() {
-    if (LocalLock.active()) showLockScreen(startApp); // gate first; load after unlock
-    else startApp();
+    if (LocalLock.active()) {
+      // Keep the (empty) app shell hidden behind the lock until unlocked.
+      var appRoot = document.getElementById('appRoot');
+      if (appRoot) appRoot.style.display = 'none';
+      showLockScreen(startApp);                       // load only after unlock
+    } else {
+      startApp();
+    }
   }
 
   if (document.readyState === 'loading') {
