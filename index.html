@@ -849,6 +849,29 @@
   </div>
 </div>
 
+<!-- Accounts Vault passcode Modal -->
+<div class="modal-overlay" id="vaultModal">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-header">
+      <h2 id="vaultModalTitle">Set Accounts Passcode</h2>
+      <button class="modal-close" onclick="closeVaultModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.82rem;color:var(--text2);margin-bottom:12px;">This passcode encrypts your Accounts entries (logins, PINs, links) and is required to view them. It is separate from your sign-in and stays on your devices.</p>
+      <div class="form-grid">
+        <div class="form-group full"><label>Passcode</label><input type="password" id="vaultPass" placeholder="At least 4 characters" autocomplete="new-password"></div>
+        <div class="form-group full"><label>Confirm passcode</label><input type="password" id="vaultPassConfirm" placeholder="Re-enter passcode" autocomplete="new-password"></div>
+        <div class="form-group full"><p style="font-size:0.74rem;color:var(--text3);margin:0;">&#9888;&#65039; The passcode is the encryption key — if you forget it, the saved accounts can&rsquo;t be recovered.</p></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="vaultRemoveBtn" style="display:none;margin-right:auto;" onclick="removeVaultProtection()">Remove</button>
+      <button class="btn btn-outline" onclick="closeVaultModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveVaultPasscode()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- FFL Dealer Import Modal -->
 <div class="modal-overlay" id="dealerImportModal">
   <div class="modal">

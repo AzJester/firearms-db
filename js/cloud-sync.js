@@ -134,6 +134,7 @@ const CloudSync = {
     });
     (s.ammo || []).forEach(a => strip(a, 'ammo'));
     (s.accessories || []).forEach(a => strip(a, 'accessory'));
+    if (window.vaultStrip) window.vaultStrip(s); // keep account entries encrypted at rest
     return s;
   },
 
@@ -141,6 +142,7 @@ const CloudSync = {
     try {
       const saveObj = Object.assign({}, db);
       delete saveObj.backups;
+      if (window.vaultStrip) window.vaultStrip(saveObj);
       await statePut('db', saveObj);
       for (const [k, v] of Object.entries(imagesDb)) {
         if (typeof v === 'string') await idbPut(k, v);
@@ -179,6 +181,9 @@ const CloudSync = {
       db.settings = cloud.settings || {};
       db.version = cloud.version || db.version;
       db.encrypted = !!cloud.encrypted;
+      db.accountsEnc = cloud.accountsEnc || null;
+      db.vault = cloud.vault || { on: false };
+      if (window.resetVaultSession) window.resetVaultSession(); // re-lock the accounts vault on every load
       db.firearms.forEach(f => {
         if (!f.tags) f.tags = [];
         if (!f.roundCount) f.roundCount = 0;
@@ -331,6 +336,9 @@ const CloudSync = {
     db.wishlist = data.wishlist || [];
     db.dealers = data.dealers || [];
     db.accounts = data.accounts || [];
+    db.accountsEnc = data.accountsEnc || null;
+    db.vault = data.vault || { on: false };
+    if (window.resetVaultSession) window.resetVaultSession();
     db.auditTrail = data.auditTrail || [];
     db.valueHistory = data.valueHistory || [];
     db.settings = data.settings || {};

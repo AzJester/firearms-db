@@ -14,7 +14,7 @@ const exists = (p) => fs.existsSync(path.join(root, p));
 
 // Element IDs that are created dynamically at runtime (not static in HTML).
 const DYNAMIC_IDS = new Set(['welcomeOverlay', 'valueChartCanvas', 'typeChartCanvas', 'calChartCanvas', 'mfgChartCanvas',
-  'dealerSearch', 'dealerNoMatch', 'dealerShownCount']);
+  'dealerSearch', 'dealerNoMatch', 'dealerShownCount', 'vaultUnlockInput']);
 
 function divBalance(html, name) {
   const open = (html.match(/<div\b/gi) || []).length;

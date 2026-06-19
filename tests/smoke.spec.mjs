@@ -23,7 +23,10 @@ test('app boots and shows the login screen', async ({ page }) => {
     openShareModal: typeof window.openShareModal,
     changeCloudPassword: typeof window.changeCloudPassword,
     openAccountModal: typeof window.openAccountModal,
-    renderAccountsTab: typeof window.renderAccountsTab
+    renderAccountsTab: typeof window.renderAccountsTab,
+    openVaultModal: typeof window.openVaultModal,
+    vaultUnlock: typeof window.vaultUnlock,
+    vaultStrip: typeof window.vaultStrip
   }));
   expect(globals.bootApp).toBe('function');
   expect(globals.CloudSync).toBe('object');
@@ -32,6 +35,9 @@ test('app boots and shows the login screen', async ({ page }) => {
   expect(globals.changeCloudPassword).toBe('function');
   expect(globals.openAccountModal).toBe('function');
   expect(globals.renderAccountsTab).toBe('function');
+  expect(globals.openVaultModal).toBe('function');
+  expect(globals.vaultUnlock).toBe('function');
+  expect(globals.vaultStrip).toBe('function');
 
   expect(ownErrors, 'No runtime errors from app scripts:\n' + ownErrors.join('\n')).toHaveLength(0);
 });

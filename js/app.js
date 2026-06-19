@@ -6,7 +6,7 @@ const APP_VERSION = '1.2.0';
 // =====================================================
 // DATA STRUCTURE & STATE
 // =====================================================
-let db = { version: 3, encrypted: false, firearms: [], ammo: [], accessories: [], wishlist: [], dealers: [], accounts: [], backups: [], settings: {}, auditTrail: [], valueHistory: [] };
+let db = { version: 3, encrypted: false, firearms: [], ammo: [], accessories: [], wishlist: [], dealers: [], accounts: [], accountsEnc: null, vault: { on: false }, backups: [], settings: {}, auditTrail: [], valueHistory: [] };
 
 // Ensure tags on all firearms
 db.firearms.forEach(f => { if (!f.tags) f.tags = []; });
@@ -584,6 +584,7 @@ async function writeToDisk() {
   if (!fileHandle) return;
   try {
     let saveObj = Object.assign({}, db, { images: imagesDb });
+    vaultStrip(saveObj);
     let toWrite = saveObj;
     if (db.encrypted && currentPassword) {
       toWrite = await encryptData(JSON.stringify(saveObj), currentPassword);
@@ -2322,7 +2323,8 @@ function exportExcel() {
 // =====================================================
 function exportJSON() {
   if(db.firearms.length===0){toast('No data to export.');return;}
-  const b=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  const out=vaultStrip(Object.assign({}, db));
+  const b=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
   const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;
   a.download='firearms_database_'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(u);
 }
@@ -2857,6 +2859,88 @@ function renderDealersTab() {
 // ACCOUNTS & LINKS (eForms, Silencer Shop, portals, vendors)
 // Stores logins/PINs and handy links; syncs privately with the collection.
 // =====================================================
+
+// ---- Accounts vault: optional passcode that encrypts the entries at rest ----
+// When enabled, db.accounts is encrypted into db.accountsEnc; the plaintext is
+// stripped from everything persisted (cloud, local cache, backups) and only
+// decrypted into memory after the user unlocks with the passcode.
+const VAULT_TOKEN = 'firearms-accounts-vault-ok';
+let _vaultKey = null;        // the passcode while unlocked (memory only)
+let _vaultUnlocked = false;  // session unlock state
+
+function vaultIsOn() { return !!(db.vault && db.vault.on); }
+function vaultIsLocked() { return vaultIsOn() && !_vaultUnlocked; }
+
+// Remove plaintext account entries from anything we persist/export, but ONLY
+// when we actually hold the encrypted copy — so a bug can never lose data.
+function vaultStrip(obj) {
+  if (obj && db.vault && db.vault.on && db.accountsEnc) obj.accounts = [];
+  return obj;
+}
+window.vaultStrip = vaultStrip;
+
+// Reset the unlock state (called after a cloud pull / fresh load).
+function resetVaultSession() { _vaultKey = null; _vaultUnlocked = false; if (vaultIsOn()) db.accounts = []; }
+window.resetVaultSession = resetVaultSession;
+
+async function _vaultEncrypt(arr, key) {
+  return { __enc: true, payload: await encryptData(JSON.stringify(arr || []), key || _vaultKey) };
+}
+
+function openVaultModal() {
+  const on = vaultIsOn();
+  document.getElementById('vaultModalTitle').textContent = on ? 'Change Accounts Passcode' : 'Set Accounts Passcode';
+  document.getElementById('vaultPass').value = '';
+  document.getElementById('vaultPassConfirm').value = '';
+  document.getElementById('vaultRemoveBtn').style.display = on ? '' : 'none';
+  document.getElementById('vaultModal').classList.add('open');
+}
+function closeVaultModal() { document.getElementById('vaultModal').classList.remove('open'); }
+
+async function saveVaultPasscode() {
+  const p1 = document.getElementById('vaultPass').value.trim();
+  const p2 = document.getElementById('vaultPassConfirm').value.trim();
+  if (p1.length < 4) { toast('Passcode must be at least 4 characters.'); return; }
+  if (p1 !== p2) { toast('Passcodes do not match.'); return; }
+  if (vaultIsOn() && !_vaultUnlocked) { toast('Unlock the accounts first to change the passcode.'); return; }
+  try {
+    db.accountsEnc = await _vaultEncrypt(db.accounts, p1);
+    db.vault = { on: true, verifier: await encryptData(VAULT_TOKEN, p1) };
+    _vaultKey = p1; _vaultUnlocked = true;
+    await saveData(); render(); closeVaultModal();
+    toast('Accounts passcode set. They’ll lock when you reload or hit “Lock”.');
+  } catch (e) { toast('Could not set passcode: ' + e.message); }
+}
+
+async function removeVaultProtection() {
+  if (vaultIsOn() && _vaultUnlocked) {
+    if (!await confirmDialog('Remove the Accounts passcode? Your entries stay saved, just without the extra unlock.', { title: 'Remove passcode', okText: 'Remove', danger: true })) return;
+    db.vault = { on: false }; db.accountsEnc = null; _vaultKey = null; _vaultUnlocked = false;
+    await saveData(); render(); closeVaultModal();
+    toast('Accounts passcode removed.');
+  } else {
+    if (!await confirmDialog('Reset the lock? The passcode is the encryption key and can’t be recovered, so this PERMANENTLY DELETES the saved account entries. (Your firearms, ammo, etc. are not affected.)', { title: 'Reset lock — deletes accounts', okText: 'Delete accounts & reset', danger: true })) return;
+    db.accounts = []; db.accountsEnc = null; db.vault = { on: false }; _vaultKey = null; _vaultUnlocked = false;
+    await saveData(); render();
+    toast('Lock reset; saved accounts were cleared.');
+  }
+}
+
+async function vaultUnlock() {
+  const el = document.getElementById('vaultUnlockInput');
+  const pc = el ? el.value : '';
+  if (!pc) { toast('Enter your passcode.'); return; }
+  let ok = false;
+  try { ok = db.vault && db.vault.verifier && (await decryptData(db.vault.verifier, pc)) === VAULT_TOKEN; } catch (e) { ok = false; }
+  if (!ok) { toast('Incorrect passcode.'); if (el) { el.value = ''; el.focus(); } return; }
+  try { db.accounts = db.accountsEnc ? JSON.parse(await decryptData(db.accountsEnc.payload, pc)) : []; }
+  catch (e) { toast('Could not unlock accounts.'); return; }
+  _vaultKey = pc; _vaultUnlocked = true;
+  render();
+}
+
+function vaultLock() { _vaultKey = null; _vaultUnlocked = false; db.accounts = []; render(); toast('Accounts locked.'); }
+
 let editingAccountId = null;
 
 function openAccountModal(editId) {
@@ -2889,6 +2973,7 @@ async function saveAccount() {
   if (!db.accounts) db.accounts = [];
   if (editingAccountId) { const i = db.accounts.findIndex(x => x.id === editingAccountId); if (i > -1) db.accounts[i] = data; addAuditEntry('edit', 'account', name, ''); }
   else { db.accounts.push(data); addAuditEntry('create', 'account', name, ''); }
+  if (vaultIsOn() && _vaultUnlocked) { try { db.accountsEnc = await _vaultEncrypt(db.accounts); } catch (e) { toast('Could not encrypt: ' + e.message); return; } }
   await saveData(); render(); closeAccountModal();
 }
 
@@ -2896,7 +2981,9 @@ async function deleteAccount(id) {
   if (!await confirmDialog('Delete this account entry?', { title: 'Delete account', okText: 'Delete', danger: true })) return;
   const a = (db.accounts || []).find(x => x.id === id);
   addAuditEntry('delete', 'account', a ? a.name : 'Unknown', '');
-  db.accounts = (db.accounts || []).filter(x => x.id !== id); saveData(); render();
+  db.accounts = (db.accounts || []).filter(x => x.id !== id);
+  if (vaultIsOn() && _vaultUnlocked) { try { db.accountsEnc = await _vaultEncrypt(db.accounts); } catch (e) { /* keep prior blob */ } }
+  await saveData(); render();
 }
 
 // Toggle a masked PIN/password between dots and its real value (the value lives
@@ -2919,10 +3006,31 @@ function renderAccountsTab() {
   document.getElementById('cardGrid').style.display = 'none';
   document.getElementById('tableContainer').style.display = 'block';
   document.getElementById('emptyState').style.display = 'none';
+
+  // Locked vault: show the unlock screen instead of any entries.
+  if (vaultIsLocked()) {
+    document.getElementById('tableContainer').innerHTML =
+      '<div class="empty-inline" style="max-width:430px;margin:0 auto;">'
+      + '<div class="icon">🔒</div><h3>Accounts are locked</h3>'
+      + '<p>Enter your Accounts passcode to view your saved logins and links.</p>'
+      + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px;">'
+      + '<input id="vaultUnlockInput" type="password" autocomplete="current-password" placeholder="Passcode" '
+      + 'style="padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);min-width:180px;" '
+      + 'onkeydown="if(event.key===\'Enter\')vaultUnlock()">'
+      + '<button class="btn btn-primary" onclick="vaultUnlock()">Unlock</button></div>'
+      + '<p style="margin-top:16px;font-size:0.74rem;color:var(--text3);">Forgot it? <button class="chip-clear" style="font-size:0.74rem;" onclick="removeVaultProtection()">Reset the lock</button> — this erases the saved accounts, since the passcode is the key.</p>'
+      + '</div>';
+    const _u = document.getElementById('vaultUnlockInput'); if (_u) setTimeout(() => _u.focus(), 30);
+    return;
+  }
+
   const items = db.accounts || [];
+  const lockBtn = vaultIsOn()
+    ? '<button class="btn btn-small btn-outline" onclick="vaultLock()">🔒 Lock</button> <button class="btn btn-small btn-outline" onclick="openVaultModal()">Passcode…</button>'
+    : '<button class="btn btn-small btn-outline" onclick="openVaultModal()">🔒 Protect with passcode</button>';
   let h = '<div style="padding:16px 24px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">'
     + '<span style="font-size:0.86rem;font-weight:600;">Accounts &amp; Links: <span style="color:var(--accent);">' + items.length + '</span></span>'
-    + '<button class="btn btn-small btn-secondary" onclick="openAccountModal()">+ Add Account</button>'
+    + '<span style="display:flex;gap:8px;flex-wrap:wrap;">' + lockBtn + '<button class="btn btn-small btn-secondary" onclick="openAccountModal()">+ Add Account</button></span>'
     + '</div>';
   if (items.length === 0) {
     h += tabEmpty('🔑', 'No accounts saved yet', 'Keep logins and links for the portals and vendors you use — e.g. ATF eForms (username + PIN), Silencer Shop, and any handy links.', '<button class="btn btn-primary" onclick="openAccountModal()">+ Add Account</button>');
@@ -3361,6 +3469,7 @@ async function saveToLocalStorage() {
     // Save full db (without backups) to IndexedDB - handles any size
     const saveObj = Object.assign({}, db);
     delete saveObj.backups;
+    vaultStrip(saveObj);
     await statePut('db', saveObj);
     if (window.CloudSync && CloudSync.ready) CloudSync.schedulePush();
     hasUnsavedChanges = true;
@@ -3382,6 +3491,9 @@ async function loadFromLocalStorage() {
     db.wishlist = data.wishlist || db.wishlist || [];
     db.dealers = data.dealers || db.dealers || [];
     db.accounts = data.accounts || db.accounts || [];
+    db.accountsEnc = data.accountsEnc || null;
+    db.vault = data.vault || { on: false };
+    resetVaultSession();
     db.auditTrail = data.auditTrail || db.auditTrail || [];
     db.valueHistory = data.valueHistory || db.valueHistory || [];
     db.settings = data.settings || db.settings || {};
@@ -3645,6 +3757,7 @@ function initDetailSwipe() {
 function manualBackup() {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const saveObj = Object.assign({}, db, { images: imagesDb });
+  vaultStrip(saveObj);
   const b = new Blob([JSON.stringify(saveObj, null, 2)], {type: 'application/json'});
   const u = URL.createObjectURL(b);
   const a = document.createElement('a');
@@ -3681,6 +3794,7 @@ async function saveToFile() {
       document.getElementById('fileStatusName').textContent = fileHandle.name;
     } else {
       const saveObj = Object.assign({}, db, { images: imagesDb });
+      vaultStrip(saveObj);
       const b = new Blob([JSON.stringify(saveObj, null, 2)], {type: 'application/json'});
       const u = URL.createObjectURL(b);
       const a = document.createElement('a');
