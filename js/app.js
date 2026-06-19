@@ -6,7 +6,7 @@ const APP_VERSION = '1.2.0';
 // =====================================================
 // DATA STRUCTURE & STATE
 // =====================================================
-let db = { version: 3, encrypted: false, firearms: [], ammo: [], accessories: [], wishlist: [], dealers: [], backups: [], settings: {}, auditTrail: [], valueHistory: [] };
+let db = { version: 3, encrypted: false, firearms: [], ammo: [], accessories: [], wishlist: [], dealers: [], accounts: [], backups: [], settings: {}, auditTrail: [], valueHistory: [] };
 
 // Ensure tags on all firearms
 db.firearms.forEach(f => { if (!f.tags) f.tags = []; });
@@ -137,7 +137,8 @@ function updateContextualActions() {
     const map = {
       all: ['+ Add Firearm', openAddModal], nfa: ['+ Add Firearm', openAddModal], disposed: ['+ Add Firearm', openAddModal],
       ammo: ['+ Add Ammo', openAddAmmoModal], accessories: ['+ Add Accessory', openAccessoryModal],
-      wishlist: ['+ Add Wishlist', openWishlistModal], dealers: ['+ Add Dealer', openDealerModal]
+      wishlist: ['+ Add Wishlist', openWishlistModal], dealers: ['+ Add Dealer', openDealerModal],
+      accounts: ['+ Add Account', openAccountModal]
     };
     const spec = map[currentTab] || null;
     _ctxAdd = spec ? spec[1] : null;
@@ -1215,6 +1216,7 @@ function render() {
   if (currentTab === 'accessories') { renderAccessoriesTab(); return; }
   if (currentTab === 'wishlist') { renderWishlistTab(); return; }
   if (currentTab === 'dealers') { renderDealersTab(); return; }
+  if (currentTab === 'accounts') { renderAccountsTab(); return; }
 
   const items = getFilteredItems();
   if (db.firearms.length === 0) { grid.style.display='none'; tc.style.display='none'; empty.style.display='block'; return; }
@@ -2374,7 +2376,7 @@ document.addEventListener('keydown',e=>{
   // Don't trigger if a modal is open
   if (document.querySelector('.modal-overlay.open') || document.querySelector('.detail-overlay.open')) return;
   const key = e.key.toLowerCase();
-  if (key === 'n') { e.preventDefault(); if (currentTab === 'wishlist') openWishlistModal(); else if (currentTab === 'dealers') openDealerModal(); else if (currentTab === 'ammo') openAddAmmoModal(); else if (currentTab === 'accessories') openAccessoryModal(); else openAddModal(); }
+  if (key === 'n') { e.preventDefault(); if (currentTab === 'wishlist') openWishlistModal(); else if (currentTab === 'dealers') openDealerModal(); else if (currentTab === 'accounts') openAccountModal(); else if (currentTab === 'ammo') openAddAmmoModal(); else if (currentTab === 'accessories') openAccessoryModal(); else openAddModal(); }
   else if (key === '/') { e.preventDefault(); document.getElementById('searchBox').focus(); }
   else if (key === 'd') { e.preventDefault(); const t = document.querySelector('[data-tab="dashboard"]'); if (t) t.click(); }
   else if (key === 'v') { e.preventDefault(); setView(currentView === 'cards' ? 'table' : 'cards'); }
@@ -2852,6 +2854,99 @@ function renderDealersTab() {
 }
 
 // =====================================================
+// ACCOUNTS & LINKS (eForms, Silencer Shop, portals, vendors)
+// Stores logins/PINs and handy links; syncs privately with the collection.
+// =====================================================
+let editingAccountId = null;
+
+function openAccountModal(editId) {
+  editingAccountId = editId || null;
+  document.getElementById('accountModalTitle').textContent = editId ? 'Edit Account' : 'Add Account';
+  const a = editId ? (db.accounts || []).find(x => x.id === editId) : null;
+  document.getElementById('acctName').value = a ? (a.name || '') : '';
+  document.getElementById('acctUser').value = a ? (a.username || '') : '';
+  document.getElementById('acctPin').value = a ? (a.pin || '') : '';
+  document.getElementById('acctUrl').value = a ? (a.url || '') : '';
+  document.getElementById('acctNotes').innerHTML = a ? (a.notes || '') : '';
+  document.getElementById('accountModal').classList.add('open');
+}
+
+function closeAccountModal() { document.getElementById('accountModal').classList.remove('open'); editingAccountId = null; }
+
+async function saveAccount() {
+  const name = document.getElementById('acctName').value.trim();
+  if (!name) { toast('Enter a name for this account.'); return; }
+  let notes = document.getElementById('acctNotes').innerHTML.trim();
+  if (notes === '<br>') notes = ''; // contenteditable leaves a stray <br> when emptied
+  const data = {
+    id: editingAccountId || generateId(),
+    name,
+    username: document.getElementById('acctUser').value.trim(),
+    pin: document.getElementById('acctPin').value.trim(),
+    url: document.getElementById('acctUrl').value.trim(),
+    notes
+  };
+  if (!db.accounts) db.accounts = [];
+  if (editingAccountId) { const i = db.accounts.findIndex(x => x.id === editingAccountId); if (i > -1) db.accounts[i] = data; addAuditEntry('edit', 'account', name, ''); }
+  else { db.accounts.push(data); addAuditEntry('create', 'account', name, ''); }
+  await saveData(); render(); closeAccountModal();
+}
+
+async function deleteAccount(id) {
+  if (!await confirmDialog('Delete this account entry?', { title: 'Delete account', okText: 'Delete', danger: true })) return;
+  const a = (db.accounts || []).find(x => x.id === id);
+  addAuditEntry('delete', 'account', a ? a.name : 'Unknown', '');
+  db.accounts = (db.accounts || []).filter(x => x.id !== id); saveData(); render();
+}
+
+// Toggle a masked PIN/password between dots and its real value (the value lives
+// in a data attribute, so this is purely show/hide on the user's own screen).
+function acctReveal(btn) {
+  const span = btn.parentNode.querySelector('.acct-secret');
+  if (!span) return;
+  if (span.getAttribute('data-shown') === '1') { span.textContent = '••••••••'; span.setAttribute('data-shown', '0'); btn.textContent = 'Show'; }
+  else { span.textContent = span.getAttribute('data-val') || ''; span.setAttribute('data-shown', '1'); btn.textContent = 'Hide'; }
+}
+
+function acctCopy(btn) {
+  const v = btn.getAttribute('data-copy') || '';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(v).then(() => toast('Copied to clipboard.')).catch(() => toast('Could not copy.'));
+  } else { toast('Clipboard not available in this browser.'); }
+}
+
+function renderAccountsTab() {
+  document.getElementById('cardGrid').style.display = 'none';
+  document.getElementById('tableContainer').style.display = 'block';
+  document.getElementById('emptyState').style.display = 'none';
+  const items = db.accounts || [];
+  let h = '<div style="padding:16px 24px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">'
+    + '<span style="font-size:0.86rem;font-weight:600;">Accounts &amp; Links: <span style="color:var(--accent);">' + items.length + '</span></span>'
+    + '<button class="btn btn-small btn-secondary" onclick="openAccountModal()">+ Add Account</button>'
+    + '</div>';
+  if (items.length === 0) {
+    h += tabEmpty('🔑', 'No accounts saved yet', 'Keep logins and links for the portals and vendors you use — e.g. ATF eForms (username + PIN), Silencer Shop, and any handy links.', '<button class="btn btn-primary" onclick="openAccountModal()">+ Add Account</button>');
+    document.getElementById('tableContainer').innerHTML = h;
+    return;
+  }
+  h += '<div style="padding:16px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:12px;">';
+  [...items].sort((a, b) => (a.name || '').localeCompare(b.name || '')).forEach(a => {
+    h += '<div class="ffl-card" style="cursor:pointer;" onclick="openAccountModal(\'' + a.id + '\')">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><h4>' + esc(a.name || 'Account') + '</h4>'
+      + '<button class="btn btn-small btn-danger" onclick="event.stopPropagation();deleteAccount(\'' + a.id + '\')">Del</button></div>';
+    if (a.username) h += '<div class="ffl-detail">Username: <span class="acct-val">' + esc(a.username) + '</span> <button class="acct-mini" data-copy="' + escAttr(a.username) + '" onclick="event.stopPropagation();acctCopy(this)">Copy</button></div>';
+    if (a.pin) h += '<div class="ffl-detail">PIN / Password: <span class="acct-secret" data-val="' + escAttr(a.pin) + '" data-shown="0">••••••••</span> '
+      + '<button class="acct-mini" onclick="event.stopPropagation();acctReveal(this)">Show</button> '
+      + '<button class="acct-mini" data-copy="' + escAttr(a.pin) + '" onclick="event.stopPropagation();acctCopy(this)">Copy</button></div>';
+    if (a.url) h += '<div class="ffl-detail"><a href="' + escAttr(safeHref(a.url)) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);">Open link ↗</a></div>';
+    if (a.notes && a.notes !== '<br>') h += '<div class="ffl-detail dealer-notes">' + a.notes + '</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  document.getElementById('tableContainer').innerHTML = h;
+}
+
+// =====================================================
 // ROUND COUNT, WARRANTY, CUSTOM FIELDS
 // =====================================================
 let tempCustomFields = [];
@@ -3286,6 +3381,7 @@ async function loadFromLocalStorage() {
     db.accessories = data.accessories || db.accessories;
     db.wishlist = data.wishlist || db.wishlist || [];
     db.dealers = data.dealers || db.dealers || [];
+    db.accounts = data.accounts || db.accounts || [];
     db.auditTrail = data.auditTrail || db.auditTrail || [];
     db.valueHistory = data.valueHistory || db.valueHistory || [];
     db.settings = data.settings || db.settings || {};
