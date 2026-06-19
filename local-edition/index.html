@@ -894,22 +894,47 @@
     </div>
     <div class="modal-body">
       <div class="form-grid">
+        <!-- App Passcode (Local Edition) -->
         <div class="form-group full">
-          <h3 style="color: var(--accent); font-size: 0.9rem; margin-bottom: 12px;">Local File Encryption</h3>
+          <h3 style="color: var(--accent); font-size: 0.9rem; margin-bottom: 4px;">App Passcode</h3>
+          <p style="font-size:0.78rem;color:var(--text3);margin-bottom:10px;">Optional. Locks the app when it opens and encrypts your saved records on this device. <strong id="passcodeState">Currently off.</strong></p>
         </div>
-        <div class="form-group full">
-          <label id="encryptionLabel">Set Password</label>
-          <input type="password" id="newPassword" placeholder="Enter new password">
+        <div id="passcodeSetWrap" style="grid-column:1/-1;">
+          <div class="form-grid">
+            <div class="form-group"><label>Create passcode</label><input type="password" id="passNew" placeholder="At least 4 characters" autocomplete="new-password"></div>
+            <div class="form-group"><label>Confirm passcode</label><input type="password" id="passConfirm" placeholder="Re-enter passcode" autocomplete="new-password"></div>
+            <div class="form-group full">
+              <button class="btn btn-primary" onclick="enableLocalPasscode()">Enable passcode</button>
+              <span style="font-size:0.74rem;color:var(--text3);margin-left:8px;">&#9888;&#65039; If you forget it, your data can&rsquo;t be recovered.</span>
+            </div>
+          </div>
         </div>
-        <div class="form-group full">
-          <label>Confirm Password</label>
-          <input type="password" id="confirmPassword" placeholder="Confirm password">
+        <div id="passcodeRemoveWrap" style="grid-column:1/-1; display:none;">
+          <div class="form-group full">
+            <button class="btn btn-danger" onclick="disableLocalPasscode()">Remove passcode</button>
+            <span style="font-size:0.74rem;color:var(--text3);margin-left:8px;">Removes the lock and stores records unencrypted on this device.</span>
+          </div>
         </div>
-        <div class="form-group full">
-          <button class="btn btn-primary" onclick="setEncryption()" id="encryptionBtn">Enable Encryption</button>
-        </div>
-        <div id="decryptSection" style="grid-column: 1/-1; display: none;">
-          <button class="btn btn-danger" onclick="removeEncryption()">Remove Encryption</button>
+        <div class="form-group full"><hr style="border:none;border-top:1px solid var(--border-light);margin:10px 0 2px;"></div>
+        <!-- Legacy export-file encryption — hidden; superseded by App Passcode (kept so settings still work) -->
+        <div id="fileEncSection" style="display:none;">
+          <div class="form-group full">
+            <h3 style="color: var(--accent); font-size: 0.9rem; margin-bottom: 12px;">Local File Encryption</h3>
+          </div>
+          <div class="form-group full">
+            <label id="encryptionLabel">Set Password</label>
+            <input type="password" id="newPassword" placeholder="Enter new password">
+          </div>
+          <div class="form-group full">
+            <label>Confirm Password</label>
+            <input type="password" id="confirmPassword" placeholder="Confirm password">
+          </div>
+          <div class="form-group full">
+            <button class="btn btn-primary" onclick="setEncryption()" id="encryptionBtn">Enable Encryption</button>
+          </div>
+          <div id="decryptSection" style="grid-column: 1/-1; display: none;">
+            <button class="btn btn-danger" onclick="removeEncryption()">Remove Encryption</button>
+          </div>
         </div>
         <!-- Audit Trail Section -->
         <div class="form-group full" style="margin-top:20px;">

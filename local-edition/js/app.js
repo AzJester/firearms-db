@@ -3201,7 +3201,13 @@ async function saveToLocalStorage() {
     // Save full db (without backups) to IndexedDB - handles any size
     const saveObj = Object.assign({}, db);
     delete saveObj.backups;
-    await statePut('db', saveObj);
+    // Local Edition: when an app passcode is set, encrypt the saved state at
+    // rest with the passcode-derived key before persisting.
+    let toStore = saveObj;
+    if (window.LocalLock && LocalLock.active && LocalLock.active() && LocalLock.key) {
+      toStore = await LocalLock.encryptState(saveObj);
+    }
+    await statePut('db', toStore);
     if (window.CloudSync && CloudSync.ready) CloudSync.schedulePush();
     hasUnsavedChanges = true;
     console.log('Auto-saved to IndexedDB');
@@ -3212,7 +3218,14 @@ async function saveToLocalStorage() {
 
 async function loadFromLocalStorage() {
   try {
-    const data = await stateGet('db');
+    let data = await stateGet('db');
+    // Local Edition: decrypt the at-rest state when it was saved under an app
+    // passcode. LocalLock.key is set by the unlock screen before bootApp runs.
+    if (data && data.__enc) {
+      if (!(window.LocalLock && LocalLock.key)) return false;
+      try { data = await LocalLock.decryptState(data); }
+      catch (e) { return false; }
+    }
     if (!data) return false;
     if (!data.firearms || data.firearms.length === 0) return false;
     // Saved state takes priority over embedded data
