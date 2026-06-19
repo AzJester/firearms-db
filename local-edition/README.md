@@ -36,6 +36,14 @@ Serve the folder locally, then install it from the browser:
 - Clearing your browser data, uninstalling, or moving to a new device will not
   carry your data over unless you restore from a backup file.
 
+### Lock the app (optional)
+There is **no password by default** — the app opens straight to your collection.
+If you want one, go to **Settings → App Passcode**, create a passcode, and click
+**Enable passcode**. From then on the app asks for it on every launch and
+encrypts your saved records on this device; remove it any time from the same
+screen. ⚠️ **There is no recovery** — the passcode is the encryption key, so if
+you forget it the data can't be opened. Keep a backup file you can restore.
+
 ### First run
 On first launch you can load a few **sample entries** to explore, or start empty.
 Sample entries use placeholder serial numbers — edit or delete them freely.

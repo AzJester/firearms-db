@@ -67,3 +67,45 @@ test('local edition boots with no login and no app-script errors', async ({ page
 
   expect(ownErrors, 'No runtime errors from local-edition scripts:\n' + ownErrors.join('\n')).toHaveLength(0);
 });
+
+// The optional App Passcode must lock the app on launch and round-trip the
+// records through at-rest encryption (passcode is the key; wrong code denied).
+test('local edition app passcode locks on launch and encrypts at rest', async ({ page }) => {
+  const ownErrors = [];
+  page.on('pageerror', (e) => {
+    const s = (e && e.stack) || String(e);
+    if (/\/local-edition\/js\/(app|local-store)\.js/.test(s)) ownErrors.push(s);
+  });
+
+  await page.goto('/local-edition/index.html');
+  await expect(page.locator('#appRoot')).toBeVisible({ timeout: 15000 });
+
+  // Seed a record, then enable a passcode (which re-saves the state encrypted).
+  await page.evaluate(async () => {
+    db.firearms.push({ id: 'test-lock-1', make: 'Test', model: 'Locker', serial: 'LOCK-1', type: 'Pistol', status: 'Active', tags: [], images: [] });
+    await saveData();
+    document.getElementById('passNew').value = 'secret123';
+    document.getElementById('passConfirm').value = 'secret123';
+    await window.enableLocalPasscode();
+  });
+
+  // After reload the lock screen must gate access; the app stays hidden.
+  await page.reload();
+  await expect(page.locator('#lockScreen')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#appRoot')).toBeHidden();
+
+  // Wrong passcode is rejected and the app remains locked.
+  await page.fill('#lockInput', 'nope');
+  await page.click('#lockScreen button[type="submit"]');
+  await expect(page.locator('#lockErr')).toBeVisible();
+  await expect(page.locator('#appRoot')).toBeHidden();
+
+  // Correct passcode unlocks and the encrypted record round-trips back.
+  await page.fill('#lockInput', 'secret123');
+  await page.click('#lockScreen button[type="submit"]');
+  await expect(page.locator('#appRoot')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#lockScreen')).toHaveCount(0);
+  expect(await page.evaluate(() => db.firearms.length)).toBeGreaterThan(0);
+
+  expect(ownErrors, 'No runtime errors from local-edition scripts:\n' + ownErrors.join('\n')).toHaveLength(0);
+});
