@@ -174,7 +174,7 @@ const CloudSync = {
       (cloud.accessories && cloud.accessories.length)));
 
     if (cloud && Object.keys(cloud).length) {
-      ['firearms', 'ammo', 'accessories', 'wishlist', 'dealers', 'auditTrail', 'valueHistory']
+      ['firearms', 'ammo', 'accessories', 'wishlist', 'dealers', 'accounts', 'auditTrail', 'valueHistory']
         .forEach(k => { db[k] = Array.isArray(cloud[k]) ? cloud[k] : []; });
       db.settings = cloud.settings || {};
       db.version = cloud.version || db.version;
@@ -330,6 +330,7 @@ const CloudSync = {
     db.accessories = data.accessories || [];
     db.wishlist = data.wishlist || [];
     db.dealers = data.dealers || [];
+    db.accounts = data.accounts || [];
     db.auditTrail = data.auditTrail || [];
     db.valueHistory = data.valueHistory || [];
     db.settings = data.settings || {};

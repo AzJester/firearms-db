@@ -298,6 +298,7 @@
   <div class="tab" data-tab="disposed">Disposed</div>
   <div class="tab" data-tab="wishlist">Wishlist</div>
   <div class="tab" data-tab="dealers">FFL Dealers</div>
+  <div class="tab" data-tab="accounts">Accounts</div>
 </div>
 
 <!-- Toolbar -->
@@ -809,6 +810,45 @@
   </div>
 </div>
 
+<!-- Account / Login Modal -->
+<div class="modal-overlay" id="accountModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="accountModalTitle">Add Account</h2>
+      <button class="modal-close" onclick="closeAccountModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label>Name</label><input type="text" id="acctName" placeholder="e.g. ATF eForms, Silencer Shop"></div>
+        <div class="form-group"><label>Username</label><input type="text" id="acctUser" placeholder="Login / username / email"></div>
+        <div class="form-group"><label>PIN / Password</label><input type="text" id="acctPin" placeholder="e.g. eForms PIN"></div>
+        <div class="form-group full"><label>Website / Link</label><input type="url" id="acctUrl" placeholder="https://eforms.atf.gov"></div>
+        <div class="form-group full"><label>Notes &amp; links</label>
+          <div class="rte-wrapper">
+            <div class="rte-toolbar">
+              <button type="button" title="Bold" onmousedown="event.preventDefault()" onclick="rteCmd('bold')"><b>B</b></button>
+              <button type="button" title="Italic" onmousedown="event.preventDefault()" onclick="rteCmd('italic')"><i>I</i></button>
+              <button type="button" title="Underline" onmousedown="event.preventDefault()" onclick="rteCmd('underline')"><u>U</u></button>
+              <div class="sep"></div>
+              <button type="button" title="Bullet List" onmousedown="event.preventDefault()" onclick="rteCmd('insertUnorderedList')">&#8226; List</button>
+              <button type="button" title="Numbered List" onmousedown="event.preventDefault()" onclick="rteCmd('insertOrderedList')">1. List</button>
+              <div class="sep"></div>
+              <button type="button" title="Link" onmousedown="event.preventDefault()" onclick="rteLink()">&#128279; Link</button>
+              <button type="button" title="Remove Formatting" onmousedown="event.preventDefault()" onclick="rteCmd('removeFormat')">Clear</button>
+            </div>
+            <div class="rte-content" id="acctNotes" contenteditable="true" data-placeholder="Account number, security questions, extra links, hours, notes..."></div>
+          </div>
+        </div>
+        <div class="form-group full"><p style="font-size:0.74rem;color:var(--text3);margin:0;">&#128274; Stored privately with your collection (only you can see it). Add several links right in &ldquo;Notes &amp; links&rdquo;.</p></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeAccountModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAccount()">Save Account</button>
+    </div>
+  </div>
+</div>
+
 <!-- FFL Dealer Import Modal -->
 <div class="modal-overlay" id="dealerImportModal">
   <div class="modal">
@@ -1041,6 +1081,7 @@
       <button class="menu-item" data-bottomtab="disposed">&#128683; Disposed</button>
       <button class="menu-item" data-bottomtab="wishlist">&#11088; Wishlist</button>
       <button class="menu-item" data-bottomtab="dealers">&#127970; FFL Dealers</button>
+      <button class="menu-item" data-bottomtab="accounts">&#128273; Accounts</button>
     </div>
   </div>
 </nav>

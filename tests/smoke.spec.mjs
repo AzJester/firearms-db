@@ -21,13 +21,17 @@ test('app boots and shows the login screen', async ({ page }) => {
     CloudSync: typeof window.CloudSync,
     toast: typeof window.toast,
     openShareModal: typeof window.openShareModal,
-    changeCloudPassword: typeof window.changeCloudPassword
+    changeCloudPassword: typeof window.changeCloudPassword,
+    openAccountModal: typeof window.openAccountModal,
+    renderAccountsTab: typeof window.renderAccountsTab
   }));
   expect(globals.bootApp).toBe('function');
   expect(globals.CloudSync).toBe('object');
   expect(globals.toast).toBe('function');
   expect(globals.openShareModal).toBe('function');
   expect(globals.changeCloudPassword).toBe('function');
+  expect(globals.openAccountModal).toBe('function');
+  expect(globals.renderAccountsTab).toBe('function');
 
   expect(ownErrors, 'No runtime errors from app scripts:\n' + ownErrors.join('\n')).toHaveLength(0);
 });

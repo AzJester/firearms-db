@@ -1803,3 +1803,12 @@ table.data-table td.num, table.data-table th.num { text-align: right; }
 .sk-line.short { width: 45%; }
 .sk-line.mid { width: 70%; }
 @media (prefers-reduced-motion: reduce) { .sk-block { animation: none; } }
+
+/* ===== ACCOUNTS & LINKS (v3.9) ===== */
+.acct-mini { background: var(--bg3); border: 1px solid var(--border); color: var(--text2);
+  font-size: 0.68rem; font-weight: 600; padding: 1px 8px; border-radius: var(--radius-pill);
+  cursor: pointer; margin-left: 4px; }
+.acct-mini:hover { border-color: var(--accent); color: var(--accent); }
+.acct-secret, .acct-val { font-variant-numeric: tabular-nums; word-break: break-all; }
+/* keep label + value + Copy/Show buttons on one wrapping line */
+.ffl-card .ffl-detail .acct-mini { vertical-align: baseline; }
